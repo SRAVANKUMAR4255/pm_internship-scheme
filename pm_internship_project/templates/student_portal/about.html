@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block title %}About — PM Internship Scheme{% endblock %}
+
+{% block nav %}
+<nav class="bg-white border-b border-gray-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="flex items-center justify-between h-12">
+            <div class="flex space-x-1">
+                <a href="{% url 'home' %}" class="nav-link">Home</a>
+                <a href="{% url 'about' %}" class="nav-link active">About</a>
+                <a href="{% url 'mentor_login' %}" class="nav-link">Mentor Login</a>
+                <a href="{% url 'admin_login' %}" class="nav-link">Admin Login</a>
+            </div>
+            <div class="flex space-x-2">
+                <a href="{% url 'student_login' %}" class="px-4 py-1.5 text-sm font-semibold text-navy-blue border-2 border-navy-blue rounded-lg hover:bg-navy-blue hover:text-white transition-all duration-200">Login</a>
+                <a href="{% url 'register' %}" class="px-4 py-1.5 text-sm font-semibold text-white bg-india-green rounded-lg hover:bg-green-700 transition-all duration-200 shadow-sm">Register</a>
+            </div>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+
+<style>
+    /* Page hero */
+    .about-hero {
+        background: linear-gradient(145deg, #0a1f45 0%, #1a3a6b 100%);
+        padding: 56px 16px 48px;
+        text-align: center;
+        position: relative; overflow: hidden;
+    }
+    .about-hero::before {
+        content:''; position:absolute; inset:0;
+        background:
+            radial-gradient(ellipse at 20% 50%, rgba(255,153,51,0.1) 0%, transparent 55%),
+            radial-gradient(ellipse at 80% 50%, rgba(19,136,8,0.08) 0%, transparent 55%);
+    }
+
+    /* Section cards */
+    .about-card {
+        background:#fff; border-radius:16px;
+        border:1px solid #e2e8f0;
+        padding:32px; margin-bottom:20px;
+        box-shadow:0 1px 4px rgba(0,0,0,0.04);
+        transition:box-shadow 0.2s;
+    }
+    .about-card:hover { box-shadow:0 6px 24px rgba(26,58,107,0.07); }
+    .section-title {
+        font-family:'DM Serif Display',serif;
+        font-size:1.15rem; color:#1a3a6b;
+        display:flex; align-items:center; gap:12px;
+        margin-bottom:18px;
+    }
+    .section-title-bar {
+        width:4px; height:22px; border-radius:2px; flex-shrink:0;
+    }
+
+    /* Objective items */
+    .obj-item {
+        display:flex; align-items:flex-start; gap:12px;
+        padding:12px 0;
+        border-bottom:1px solid #f8fafc;
+    }
+    .obj-item:last-child { border-bottom:none; }
+    .obj-check {
+        width:22px; height:22px; border-radius:50%;
+        background:#dcfce7; border:1px solid #bbf7d0;
+        display:flex; align-items:center; justify-content:center;
+        flex-shrink:0; font-size:11px; font-weight:800; color:#138808;
+        margin-top:1px;
+    }
+
+    /* Benefit cards */
+    .benefit-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    @media(max-width:640px){ .benefit-grid { grid-template-columns:1fr; } }
+
+    .benefit-item {
+        border-radius:12px; padding:16px;
+        border:1px solid transparent;
+        transition:all 0.2s;
+    }
+    .benefit-item:hover { transform:translateY(-2px); box-shadow:0 6px 18px rgba(0,0,0,0.07); }
+    .benefit-title { font-size:0.875rem; font-weight:700; color:#1a3a6b; margin-bottom:4px; }
+    .benefit-desc  { font-size:0.75rem; color:#64748b; line-height:1.6; }
+
+    /* CTA */
+    .cta-about {
+        background:linear-gradient(135deg,#0a1f45 0%,#1a3a6b 60%,#1e4a80 100%);
+        border-radius:20px; padding:52px 40px; text-align:center;
+        position:relative; overflow:hidden;
+    }
+    .cta-about::before {
+        content:''; position:absolute; inset:0;
+        background:
+            radial-gradient(circle at 20% 50%, rgba(255,153,51,0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 50%, rgba(19,136,8,0.08) 0%, transparent 50%);
+    }
+</style>
+
+<!-- About Hero -->
+<div class="about-hero">
+    <div class="relative z-10">
+        <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,153,51,0.15);border:1px solid rgba(255,153,51,0.4);color:#FF9933;font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:5px 14px;border-radius:100px;margin-bottom:16px;">
+            🇮🇳 Government of India
+        </span>
+        <h2 style="font-family:'DM Serif Display',serif;font-size:2.2rem;color:#fff;margin:0 0 8px;">About PM Internship Scheme</h2>
+        <p style="color:rgba(147,197,253,0.7);font-size:0.875rem;">Ministry of Corporate Affairs · Union Budget 2024-25</p>
+    </div>
+</div>
+
+<div class="max-w-4xl mx-auto px-4 py-12">
+
+    <!-- Overview -->
+    <div class="about-card">
+        <div class="section-title">
+            <div class="section-title-bar" style="background:linear-gradient(180deg,#FF9933,#e8851f);"></div>
+            Scheme Overview
+        </div>
+        <p style="color:#475569;font-size:0.9rem;line-height:1.8;margin-bottom:12px;">
+            The PM Internship Scheme is a flagship initiative of the Government of India under the Ministry of Corporate Affairs, announced in Union Budget 2024-25. The scheme aims to provide internship opportunities to <strong style="color:#1a3a6b;">1 crore youth</strong> in <strong style="color:#1a3a6b;">500 top companies</strong> over a period of 5 years.
+        </p>
+        <p style="color:#475569;font-size:0.9rem;line-height:1.8;">
+            It bridges the gap between academic learning and industry requirements by providing hands-on experience, thereby enhancing the employability of India's youth.
+        </p>
+    </div>
+
+    <!-- Objectives -->
+    <div class="about-card">
+        <div class="section-title">
+            <div class="section-title-bar" style="background:linear-gradient(180deg,#138808,#0a5c06);"></div>
+            Objectives of the Scheme
+        </div>
+        <div>
+            {% for objective in objectives %}
+            <div class="obj-item">
+                <div class="obj-check">✓</div>
+                <p style="color:#475569;font-size:0.875rem;line-height:1.7;">{{ objective }}</p>
+            </div>
+            {% empty %}
+            <div class="obj-item"><div class="obj-check">✓</div><p style="color:#475569;font-size:0.875rem;line-height:1.7;">Provide real-world work experience to India's youth in top companies across diverse sectors.</p></div>
+            <div class="obj-item"><div class="obj-check">✓</div><p style="color:#475569;font-size:0.875rem;line-height:1.7;">Enhance the employability and skill development of young Indians aged 21-24 years.</p></div>
+            <div class="obj-item"><div class="obj-check">✓</div><p style="color:#475569;font-size:0.875rem;line-height:1.7;">Bridge the gap between academic education and industry requirements.</p></div>
+            <div class="obj-item"><div class="obj-check">✓</div><p style="color:#475569;font-size:0.875rem;line-height:1.7;">Provide financial support through stipend to enable underprivileged youth to participate.</p></div>
+            <div class="obj-item"><div class="obj-check">✓</div><p style="color:#475569;font-size:0.875rem;line-height:1.7;">Build a pipeline of industry-ready talent to fuel India's economic growth ambitions.</p></div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Benefits -->
+    <div class="about-card">
+        <div class="section-title">
+            <div class="section-title-bar" style="background:linear-gradient(180deg,#FF9933,#e8851f);"></div>
+            Benefits for Students
+        </div>
+        <div class="benefit-grid">
+            <div class="benefit-item" style="background:#FFF3E0;border-color:#fed7aa;">
+                <div class="benefit-title">💰 Monthly Stipend</div>
+                <p class="benefit-desc">₹5,000 per month provided by the Government of India during the 12-month internship period.</p>
+            </div>
+            <div class="benefit-item" style="background:#E8F5E9;border-color:#bbf7d0;">
+                <div class="benefit-title">🎁 One-Time Assistance</div>
+                <p class="benefit-desc">₹6,000 one-time grant to cover incidental expenses at the start of the internship.</p>
+            </div>
+            <div class="benefit-item" style="background:#eff6ff;border-color:#bfdbfe;">
+                <div class="benefit-title">🏥 Insurance Coverage</div>
+                <p class="benefit-desc">Coverage under PM Jeevan Jyoti Bima Yojana and PM Suraksha Bima Yojana.</p>
+            </div>
+            <div class="benefit-item" style="background:#f5f3ff;border-color:#ddd6fe;">
+                <div class="benefit-title">📜 Completion Certificate</div>
+                <p class="benefit-desc">Government-recognized certificate upon successful completion of the internship.</p>
+            </div>
+            <div class="benefit-item" style="background:#fefce8;border-color:#fde68a;">
+                <div class="benefit-title">🏢 Top Companies</div>
+                <p class="benefit-desc">Opportunity to intern at 500+ top Indian companies across diverse sectors.</p>
+            </div>
+            <div class="benefit-item" style="background:#fff1f2;border-color:#fecdd3;">
+                <div class="benefit-title">👨‍🏫 Expert Mentorship</div>
+                <p class="benefit-desc">Dedicated mentors from top companies to guide you throughout the internship.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta-about">
+        <div class="relative z-10">
+            <span style="color:#FF9933;font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Get Started</span>
+            <h3 style="font-family:'DM Serif Display',serif;color:#fff;font-size:1.8rem;margin:10px 0 8px;">Ready to Apply?</h3>
+            <p style="color:rgba(147,197,253,0.7);font-size:0.875rem;margin-bottom:24px;">Register today and take the first step towards your career.</p>
+            <a href="{% url 'register' %}"
+               style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#FF9933,#e8851f);color:#fff;font-weight:700;font-size:0.9rem;padding:13px 32px;border-radius:12px;text-decoration:none;box-shadow:0 4px 20px rgba(255,153,51,0.4);transition:all 0.2s;"
+               onmouseover="this.style.transform='translateY(-2px)'"
+               onmouseout="this.style.transform='translateY(0)'">
+                Register Now →
+            </a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

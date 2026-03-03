@@ -1,0 +1,573 @@
+{% extends 'base.html' %}
+{% block title %}Resume Career Prediction — PM Internship Scheme{% endblock %}
+
+{% block nav %}
+<style>
+  .student-nav-link{display:inline-flex;align-items:center;padding:8px 14px;font-size:0.8rem;font-weight:500;color:#64748b;white-space:nowrap;border-bottom:2px solid transparent;transition:all 0.18s ease;text-decoration:none;}
+  .student-nav-link:hover{color:#1a3a6b;background:#f8fafc;}
+  .student-nav-link.active{color:#1a3a6b;font-weight:700;border-bottom-color:#FF9933;background:#FFF3E0;}
+</style>
+<nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="flex items-center justify-between h-12">
+      <div class="flex overflow-x-auto">
+        <a href="{% url 'student_dashboard' %}" class="student-nav-link">Dashboard</a>
+        <a href="{% url 'prediction' %}" class="student-nav-link active">Prediction</a>
+        <a href="{% url 'my_predictions' %}" class="student-nav-link">My Predictions</a>
+        <a href="{% url 'view_internships' %}" class="student-nav-link">Internships</a>
+        <a href="{% url 'application_status' %}" class="student-nav-link">Applications</a>
+        <a href="{% url 'learn_classes' %}" class="student-nav-link">Classes</a>
+        <a href="{% url 'my_profile' %}" class="student-nav-link">Profile</a>
+        <a href="{% url 'submit_feedback' %}" class="student-nav-link">Feedback</a>
+      </div>
+      <div class="flex items-center gap-3 ml-3 flex-shrink-0">
+        <div class="hidden md:flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full bg-navy-blue text-white text-xs font-bold flex items-center justify-center">{{ request.user.full_name|first|upper }}</div>
+          <span class="text-xs text-gray-600 font-medium">{{ request.user.full_name }}</span>
+        </div>
+        <a href="{% url 'student_logout' %}" class="px-3 py-1.5 text-xs font-bold text-red-600 border border-red-200 rounded-lg hover:bg-red-600 hover:text-white transition-all">Logout</a>
+      </div>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<style>
+  .page-wrapper { max-width: 900px; margin: 0 auto; padding: 32px 16px; }
+
+  /* ML warning banner */
+  .ml-warning {
+    display: flex; align-items: flex-start; gap: 14px;
+    background: #fffbeb; border: 1px solid #fde68a;
+    border-radius: 14px; padding: 16px 20px;
+    margin-bottom: 24px;
+  }
+  .ml-warning-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 1px; }
+  .ml-warning code {
+    background: #fef3c7; padding: 1px 5px;
+    border-radius: 4px; font-size: 0.72rem; font-family: monospace;
+  }
+
+  /* Upload card */
+  .upload-card {
+    background: #fff; border-radius: 20px;
+    border: 1px solid #e2e8f0; overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05), 0 8px 32px rgba(26,58,107,0.07);
+    margin-bottom: 24px;
+  }
+  .upload-card-header {
+    background: linear-gradient(145deg, #0f2952 0%, #1a3a6b 55%, #1e4a80 100%);
+    padding: 24px 28px; position: relative; overflow: hidden;
+  }
+  .upload-card-header::before {
+    content:''; position:absolute; top:-40px; right:-30px;
+    width:140px; height:140px; border-radius:50%;
+    background:radial-gradient(circle,rgba(255,153,51,0.15) 0%,transparent 70%);
+  }
+  .tricolor-strip {
+    height: 3px;
+    background: linear-gradient(90deg, #FF9933 33.33%, #fff 33.33%, #fff 66.66%, #138808 66.66%);
+  }
+
+  /* Drop zone */
+  .drop-zone {
+    border: 2px dashed #cbd5e1;
+    border-radius: 16px; padding: 48px 20px;
+    text-align: center; cursor: pointer;
+    transition: all 0.2s ease; margin-bottom: 20px;
+    background: #fafbfc;
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: #FF9933; background: #FFF3E0;
+  }
+  .drop-zone.file-selected {
+    border-color: #138808; background: #f0fdf4;
+  }
+  .drop-icon { font-size: 3rem; margin-bottom: 12px; display: block; transition: transform 0.3s; }
+  .drop-zone:hover .drop-icon { transform: translateY(-4px); }
+
+  /* File info box */
+  .file-info-box {
+    display: flex; align-items: center; gap: 12px;
+    background: #f0fdf4; border: 1px solid #bbf7d0;
+    border-radius: 12px; padding: 12px 16px; margin-bottom: 20px;
+  }
+
+  /* What you'll get list */
+  .feature-list {
+    background: #f8fafc; border-radius: 12px;
+    border: 1px solid #e2e8f0; padding: 16px 20px;
+    margin-bottom: 20px;
+  }
+  .feature-list-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 0.8rem; color: #475569; margin-bottom: 8px; line-height: 1.5;
+  }
+  .feature-list-item:last-child { margin-bottom: 0; }
+  .feature-list-dot { color: #FF9933; flex-shrink: 0; font-weight: 700; margin-top: 1px; }
+
+  /* Submit button */
+  .btn-analyse {
+    width: 100%;
+    background: linear-gradient(135deg, #FF9933 0%, #e8851f 100%);
+    color: #fff; font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem; font-weight: 700;
+    padding: 14px 20px; border-radius: 12px; border: none;
+    cursor: pointer; box-shadow: 0 4px 14px rgba(255,153,51,0.35);
+    transition: all 0.22s ease;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-analyse:hover {
+    box-shadow: 0 6px 20px rgba(255,153,51,0.45); transform: translateY(-1px);
+  }
+  .btn-analyse:disabled {
+    opacity: 0.75; cursor: not-allowed; transform: none;
+  }
+
+  /* ═══ RESULTS SECTION ═══ */
+
+  /* Terminal block */
+  .terminal-block {
+    background: #0d1117; border-radius: 16px; overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3); margin-bottom: 16px;
+  }
+  .terminal-header {
+    background: #161b22; padding: 10px 16px;
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid #21262d;
+  }
+  .term-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .terminal-body { padding: 20px 24px; font-family: 'Fira Code', 'Courier New', monospace; font-size: 0.82rem; line-height: 1.8; }
+
+  /* Result header banner */
+  .result-header {
+    background: linear-gradient(145deg, #0a1f45 0%, #1a3a6b 55%, #1e4a80 100%);
+    border-radius: 20px; padding: 28px 32px;
+    position: relative; overflow: hidden; margin-bottom: 16px;
+  }
+  .result-header::before {
+    content:''; position:absolute; top:-50px; right:-40px;
+    width:180px; height:180px; border-radius:50%;
+    background:radial-gradient(circle,rgba(255,153,51,0.12) 0%,transparent 70%);
+  }
+  .result-header::after {
+    content:''; position:absolute; bottom:-40px; left:10%;
+    width:140px; height:140px; border-radius:50%;
+    background:radial-gradient(circle,rgba(19,136,8,0.08) 0%,transparent 70%);
+  }
+
+  /* Confidence bar */
+  .confidence-bar-track {
+    flex: 1; background: rgba(255,255,255,0.1);
+    border-radius: 100px; height: 6px; max-width: 200px; overflow: hidden;
+  }
+  .confidence-bar-fill { height: 100%; border-radius: 100px; background: #FF9933; }
+
+  /* Category prediction bars */
+  .cat-bar-card { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+  .section-hd { background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 14px 20px; }
+  .section-hd h4 { font-family: 'DM Serif Display', serif; font-size: 0.95rem; color: #1a3a6b; margin: 0; }
+
+  .cat-bar-row { margin-bottom: 18px; }
+  .cat-bar-track { width: 100%; background: #f1f5f9; border-radius: 100px; height: 32px; overflow: hidden; position: relative; }
+  .cat-bar-fill {
+    height: 100%; border-radius: 100px;
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 12px; transition: width 0.8s cubic-bezier(0.22,1,0.36,1);
+  }
+
+  /* Jobs table card */
+  .jobs-card { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+  .job-row { padding: 14px 20px; border-bottom: 1px solid #f8fafc; display: flex; align-items: center; gap: 14px; transition: background 0.15s; }
+  .job-row:hover { background: #f8fafc; }
+  .job-row:last-child { border-bottom: none; }
+  .job-rank {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 700; flex-shrink: 0;
+  }
+
+  /* Internship match cards */
+  .match-card { border-radius: 16px; overflow: hidden; margin-bottom: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+  .match-card-header { background: linear-gradient(135deg, #138808 0%, #0f6606 100%); padding: 18px 20px; }
+
+  .match-item { padding: 18px 20px; border-bottom: 1px solid #f8fafc; }
+  .match-item:last-child { border-bottom: none; }
+
+  .match-score-pill {
+    font-size: 0.68rem; font-weight: 700; padding: 3px 10px; border-radius: 100px;
+  }
+  .match-reason-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d;
+    font-size: 0.68rem; font-weight: 600; padding: 2px 8px; border-radius: 100px;
+  }
+  .skill-tag-blue {
+    display: inline-flex; background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8;
+    font-size: 0.68rem; font-weight: 600; padding: 2px 8px; border-radius: 100px;
+  }
+
+  .btn-apply-green {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: linear-gradient(135deg,#138808,#0f6606);
+    color: #fff; font-size: 0.8rem; font-weight: 700;
+    padding: 10px 18px; border-radius: 10px; text-decoration: none;
+    box-shadow: 0 3px 10px rgba(19,136,8,0.25); transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn-apply-green:hover { box-shadow: 0 5px 16px rgba(19,136,8,0.35); transform: translateY(-1px); }
+
+  .btn-outline-navy {
+    flex: 1; text-align: center; display: block;
+    background: #fff; border: 2px solid #1a3a6b;
+    color: #1a3a6b; font-weight: 700; font-size: 0.875rem;
+    padding: 13px 20px; border-radius: 12px; text-decoration: none;
+    transition: all 0.2s;
+  }
+  .btn-outline-navy:hover { background: #1a3a6b; color: #fff; }
+
+  .btn-solid-saffron {
+    flex: 1; text-align: center; display: block;
+    background: linear-gradient(135deg,#FF9933,#e8851f);
+    color: #fff; font-weight: 700; font-size: 0.875rem;
+    padding: 13px 20px; border-radius: 12px; text-decoration: none;
+    box-shadow: 0 4px 14px rgba(255,153,51,0.3); transition: all 0.2s;
+  }
+  .btn-solid-saffron:hover { box-shadow: 0 6px 20px rgba(255,153,51,0.4); transform: translateY(-1px); }
+
+  .empty-state { text-align: center; padding: 48px 20px; color: #94a3b8; }
+</style>
+
+<div class="page-wrapper">
+
+  <!-- Page heading -->
+  <div style="margin-bottom: 24px;">
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+      <a href="{% url 'student_dashboard' %}" style="font-size:0.75rem;color:#1a3a6b;text-decoration:none;">← Dashboard</a>
+      <span style="font-size:0.75rem;color:#94a3b8;">/</span>
+      <span style="font-size:0.75rem;color:#475569;font-weight:500;">Resume Career Prediction</span>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <h2 style="font-family:'DM Serif Display',serif;font-size:1.6rem;color:#1a3a6b;margin:0;">🔮 Resume Career Prediction</h2>
+      <a href="{% url 'my_predictions' %}" style="display:inline-flex;align-items:center;gap:6px;font-size:0.78rem;font-weight:600;color:#FF9933;border:1.5px solid #FF9933;padding:8px 16px;border-radius:9px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.background='#FF9933';this.style.color='white'" onmouseout="this.style.background='transparent';this.style.color='#FF9933'">
+        📋 My Prediction History →
+      </a>
+    </div>
+  </div>
+
+  <!-- ML Warning -->
+  {% if not ml_available %}
+  <div class="ml-warning">
+    <span class="ml-warning-icon">⚠️</span>
+    <div>
+      <p style="font-weight:700;color:#92400e;font-size:0.875rem;margin-bottom:4px;">ML Models Not Found — Running Keyword Fallback</p>
+      <p style="font-size:0.78rem;color:#b45309;line-height:1.6;">
+        Place <code>best_model.pkl</code>, <code>tfidf_vectorizer.pkl</code>, <code>label_encoder.pkl</code>, <code>df_jobs.pkl</code>
+        inside <code>saved_models/</code> for full ML predictions. Results are still generated using keyword matching.
+      </p>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if not result %}
+  <!-- ═══════════ UPLOAD FORM ═══════════ -->
+  <div class="upload-card">
+    <div class="upload-card-header">
+      <div style="position:relative;z-index:1;">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.08);border:2px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:1.6rem;backdrop-filter:blur(4px);flex-shrink:0;">📄</div>
+          <div>
+            <h3 style="font-family:'DM Serif Display',serif;font-size:1.25rem;color:#fff;margin:0 0 4px;">Upload Resume PDF</h3>
+            <p style="font-size:0.72rem;color:rgba(147,197,253,0.8);margin:0;text-transform:uppercase;letter-spacing:0.07em;">Get ML-powered career prediction + matching internships</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tricolor-strip"></div>
+    <div style="padding:28px 28px 32px;">
+      <form method="POST" enctype="multipart/form-data" id="uploadForm">
+        {% csrf_token %}
+
+        <!-- Drop Zone -->
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('resumeInput').click()">
+          <span class="drop-icon" id="dropIcon">📄</span>
+          <p style="font-weight:700;color:#334155;font-size:0.95rem;margin:0 0 6px;" id="dropText">Click or drag & drop your Resume PDF</p>
+          <p style="font-size:0.75rem;color:#94a3b8;margin:0;">PDF only · Max 5 MB</p>
+          <input type="file" id="resumeInput" name="resume_pdf" accept=".pdf" class="hidden" onchange="handleFile(this)">
+        </div>
+
+        <!-- File selected info -->
+        <div class="file-info-box hidden" id="fileInfo">
+          <span style="font-size:1.6rem;">📋</span>
+          <div style="flex:1;">
+            <p style="font-weight:700;color:#15803d;font-size:0.875rem;margin:0 0 2px;" id="fileName"></p>
+            <p style="font-size:0.72rem;color:#16a34a;margin:0;" id="fileSize"></p>
+          </div>
+          <button type="button" onclick="clearFile()" style="font-size:0.72rem;font-weight:700;color:#dc2626;background:none;border:none;cursor:pointer;">✕ Remove</button>
+        </div>
+
+        <!-- Feature list -->
+        <div class="feature-list">
+          <p style="font-weight:700;font-size:0.8rem;color:#1a3a6b;margin:0 0 12px;font-family:'DM Serif Display',serif;">What you'll get:</p>
+          <div class="feature-list-item"><span class="feature-list-dot">✦</span><span>PDF text extracted → cleaned → {{ ml_available|yesno:"ML model,keyword" }} prediction</span></div>
+          <div class="feature-list-item"><span class="feature-list-dot">✦</span><span>Predicted career category with <strong>confidence score</strong></span></div>
+          <div class="feature-list-item"><span class="feature-list-dot">✦</span><span><strong>Top 3 category predictions</strong> with visual progress bars</span></div>
+          <div class="feature-list-item"><span class="feature-list-dot">✦</span><span><strong>Top 5 matching jobs</strong> from dataset with similarity scores</span></div>
+          <div class="feature-list-item"><span class="feature-list-dot">✦</span><span><strong>Live mentor internships</strong> matched to your resume profile</span></div>
+          <div class="feature-list-item"><span class="feature-list-dot">✦</span><span>Full results saved — downloadable as CSV or JSON</span></div>
+        </div>
+
+        <button type="submit" class="btn-analyse" id="submitBtn">
+          <span>🚀</span><span>Analyse Resume & Get Prediction</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  {% else %}
+  <!-- ═══════════ RESULTS ═══════════ -->
+
+  <!-- Result Header Banner -->
+  <div class="result-header">
+    <div style="position:relative;z-index:1;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+        <div>
+          <p style="color:rgba(147,197,253,0.7);font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">Prediction Complete</p>
+          <h3 style="font-family:'DM Serif Display',serif;font-size:1.8rem;color:#fff;margin:0 0 6px;">{{ result.predicted_category }}</h3>
+          <p style="color:rgba(147,197,253,0.7);font-size:0.8rem;margin:0 0 14px;">{{ result.resume_filename|default:"Uploaded File" }}{% if result.words_extracted %} · {{ result.words_extracted }} words{% endif %}</p>
+
+          {% if result.confidence_score %}
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <span style="font-size:0.72rem;color:rgba(147,197,253,0.7);">Confidence</span>
+            <div class="confidence-bar-track">
+              <div class="confidence-bar-fill" style="width:{{ result.confidence_score }}%;"></div>
+            </div>
+            <span style="font-weight:700;color:#FF9933;font-size:0.875rem;">{{ result.confidence_score|floatformat:1 }}%</span>
+          </div>
+          {% endif %}
+
+          {% if result.ml_used %}
+          <span style="background:rgba(19,136,8,0.25);border:1px solid rgba(19,136,8,0.4);color:#4ade80;font-size:0.68rem;font-weight:700;padding:4px 10px;border-radius:100px;">✅ ML-Powered Prediction</span>
+          {% else %}
+          <span style="background:rgba(255,153,51,0.2);border:1px solid rgba(255,153,51,0.4);color:#fbbf24;font-size:0.68rem;font-weight:700;padding:4px 10px;border-radius:100px;">⚠️ Keyword-based Fallback</span>
+          {% endif %}
+        </div>
+
+        <!-- Download buttons -->
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <a href="{% url 'download_prediction' result.prediction_id %}?format=csv" style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.9);color:#1a3a6b;font-size:0.75rem;font-weight:700;padding:9px 16px;border-radius:9px;text-decoration:none;transition:background 0.2s;white-space:nowrap;">📥 Download CSV</a>
+          <a href="{% url 'download_prediction' result.prediction_id %}?format=json" style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,153,51,0.85);color:#fff;font-size:0.75rem;font-weight:700;padding:9px 16px;border-radius:9px;text-decoration:none;transition:all 0.2s;white-space:nowrap;">📥 Download JSON</a>
+          <a href="{% url 'prediction_detail' result.prediction_id %}" style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:0.75rem;font-weight:700;padding:9px 16px;border-radius:9px;text-decoration:none;white-space:nowrap;">🔍 Full Detail View</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Terminal: Extraction Output -->
+  {% if result.clean_preview %}
+  <div class="terminal-block">
+    <div class="terminal-header">
+      <span class="term-dot" style="background:#ff5f57;"></span>
+      <span class="term-dot" style="background:#febc2e;"></span>
+      <span class="term-dot" style="background:#28c840;"></span>
+      <span style="color:#8b949e;font-size:0.72rem;margin-left:8px;font-family:monospace;">📓 resume_extraction.output</span>
+    </div>
+    <div class="terminal-body">
+      <p style="color:#79c0ff;">📄 Reading: <span style="color:#e6edf3;">{{ result.resume_filename }}</span></p>
+      <p style="color:#3d444d;">&nbsp;</p>
+      <p style="color:#7ee787;">words_raw&nbsp;&nbsp;&nbsp; : <span style="color:#e6edf3;font-weight:700;">{{ result.words_raw }}</span></p>
+      <p style="color:#7ee787;">words_clean&nbsp; : <span style="color:#e6edf3;font-weight:700;">{{ result.words_clean }}</span></p>
+      <p style="color:#3d444d;">&nbsp;</p>
+      <p style="color:#d29922;">preview (first 200 chars):</p>
+      <p style="color:#8b949e;background:#161b22;border-radius:8px;padding:12px 16px;font-size:0.76rem;line-height:1.7;word-break:break-all;margin-top:6px;">...{{ result.clean_preview }}...</p>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Category Predictions -->
+  {% if result.top_categories or result.top3_categories %}
+  {% with cats=result.top_categories|default:result.top3_categories %}
+  <div class="cat-bar-card">
+    <div class="section-hd">
+      <h4>🏷️ Top Career Category Predictions</h4>
+    </div>
+    <div style="padding:22px 24px;">
+      {% for cat in cats %}
+      <div class="cat-bar-row">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:0.7rem;color:#94a3b8;min-width:16px;">#{{ forloop.counter }}</span>
+            <span style="font-weight:700;font-size:0.875rem;{% if forloop.first %}color:#1a3a6b;{% else %}color:#64748b;{% endif %}">{{ cat.category }}</span>
+            {% if forloop.first %}<span style="background:#FF9933;color:#fff;font-size:0.65rem;font-weight:700;padding:2px 8px;border-radius:100px;">Best Match</span>{% endif %}
+          </div>
+          <span style="font-weight:700;font-size:0.875rem;{% if forloop.first %}color:#FF9933;{% else %}color:#94a3b8;{% endif %}">{{ cat.score|floatformat:1 }}%</span>
+        </div>
+        <div class="cat-bar-track">
+          <div class="cat-bar-fill" style="width:{{ cat.score }}%;
+            {% if forloop.first %}background:linear-gradient(90deg,#FF9933,#ffb866);
+            {% elif forloop.counter == 2 %}background:linear-gradient(90deg,#1a3a6b,#3b82f6);
+            {% else %}background:linear-gradient(90deg,#94a3b8,#cbd5e1);{% endif %}">
+            <span style="color:#fff;font-size:0.72rem;font-weight:700;">{{ cat.score|floatformat:1 }}%</span>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endwith %}
+  {% endif %}
+
+  <!-- Top 5 Jobs -->
+  {% if result.top5_jobs or result.top_jobs %}
+  {% with jobs=result.top_jobs|default:result.top5_jobs %}
+  <div class="jobs-card">
+    <div class="section-hd">
+      <h4>💼 Top 5 Matching Jobs from Dataset</h4>
+      <p style="font-size:0.72rem;color:#94a3b8;margin:4px 0 0;">Based on cosine similarity with your resume content</p>
+    </div>
+    {% for job in jobs %}
+    <div class="job-row">
+      <div class="job-rank" style="
+        {% if job.rank == 1 %}background:#FF9933;color:#fff;
+        {% elif job.rank == 2 %}background:#e2e8f0;color:#475569;
+        {% elif job.rank == 3 %}background:#fed7aa;color:#c2570a;
+        {% else %}background:#f1f5f9;color:#94a3b8;{% endif %}">
+        {{ job.rank }}
+      </div>
+      <div style="flex:1;min-width:0;">
+        <p style="font-weight:700;color:#1a3a6b;font-size:0.875rem;margin:0 0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ job.job_title }}</p>
+        <div style="display:flex;gap:10px;font-size:0.72rem;color:#64748b;flex-wrap:wrap;">
+          <span>📁 {{ job.category }}</span>
+          {% if job.location and job.location != 'N/A' %}<span>📍 {{ job.location }}</span>{% endif %}
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <p style="font-size:0.65rem;color:#94a3b8;margin:0 0 2px;">Similarity</p>
+        <p style="font-weight:700;color:#138808;font-size:0.875rem;margin:0;">{{ job.similarity_score }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endwith %}
+  {% endif %}
+
+  <!-- Matched Internships -->
+  <div class="match-card">
+    <div class="match-card-header">
+      <div style="position:relative;z-index:1;">
+        <p style="font-weight:700;color:#fff;font-size:0.9rem;margin:0 0 4px;font-family:'DM Serif Display',serif;">🏛️ Matched Mentor Internships</p>
+        <p style="font-size:0.72rem;color:rgba(187,247,208,0.8);margin:0;">Live internships from the portal matched to your resume</p>
+      </div>
+    </div>
+    <div style="background:#fff;">
+      {% if result.matched_internships %}
+      {% for intern in result.matched_internships %}
+      <div class="match-item">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:200px;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px;">
+              <h5 style="font-family:'DM Serif Display',serif;font-size:1rem;color:#1a3a6b;margin:0;">{{ intern.title }}</h5>
+              <span class="match-score-pill" style="{% if intern.match_score >= 70 %}background:#dcfce7;color:#15803d;{% elif intern.match_score >= 40 %}background:#fef9c3;color:#a16207;{% else %}background:#dbeafe;color:#1d4ed8;{% endif %}">
+                {{ intern.match_score }}% Match
+              </span>
+            </div>
+            <p style="font-size:0.875rem;font-weight:600;color:#475569;margin:0 0 8px;">{{ intern.company_name }}</p>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:0.72rem;color:#64748b;margin-bottom:8px;">
+              <span>🏭 {{ intern.sector }}</span>
+              <span>📍 {{ intern.location }}</span>
+              <span>🏢 {{ intern.mode }}</span>
+              <span>💰 ₹{{ intern.stipend_amount }}/mo</span>
+              <span>⏱ {{ intern.duration }}</span>
+              <span>👨‍💼 {{ intern.mentor_name }}</span>
+            </div>
+            {% if intern.match_reasons %}
+            <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;">
+              {% for reason in intern.match_reasons %}
+              <span class="match-reason-tag">✓ {{ reason }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+            {% if intern.skills_required %}
+            <div style="display:flex;flex-wrap:wrap;gap:4px;">
+              {% for skill in intern.skills_required.split|slice:":5" %}
+              <span class="skill-tag-blue">{{ skill|truncatechars:18 }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Apply button -->
+          <div style="flex-shrink:0;text-align:center;min-width:100px;">
+            {% if intern.id in result.applied_ids %}
+            <span style="display:block;background:#f8fafc;border:1.5px solid #e2e8f0;color:#64748b;font-size:0.75rem;font-weight:700;padding:9px 16px;border-radius:10px;margin-bottom:4px;">✓ Applied</span>
+            <a href="{% url 'application_status' %}" style="font-size:0.7rem;color:#1a3a6b;font-weight:600;text-decoration:none;">Check status →</a>
+            {% else %}
+            <a href="{% url 'apply_from_prediction' intern.id result.prediction_id %}" class="btn-apply-green">Apply Now →</a>
+            <p style="font-size:0.68rem;color:#94a3b8;margin:5px 0 0;">via {{ intern.mentor_name }}</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+
+      {% else %}
+      <div class="empty-state">
+        <div style="font-size:3rem;margin-bottom:12px;">🔍</div>
+        <p style="font-weight:600;color:#475569;font-size:0.95rem;margin-bottom:5px;">No closely matching internships found.</p>
+        <p style="font-size:0.8rem;margin-bottom:18px;">Your predicted category (<strong>{{ result.predicted_category }}</strong>) may not match current active listings.</p>
+        <a href="{% url 'view_internships' %}" style="display:inline-flex;align-items:center;gap:6px;background:#1a3a6b;color:#fff;font-size:0.8rem;font-weight:700;padding:10px 20px;border-radius:10px;text-decoration:none;box-shadow:0 3px 10px rgba(26,58,107,0.2);">Browse All Internships →</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Action Row -->
+  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+    <a href="{% url 'prediction' %}" class="btn-outline-navy">↑ Upload Another Resume</a>
+    <a href="{% url 'my_predictions' %}" class="btn-solid-saffron">📋 View All My Predictions</a>
+  </div>
+
+  {% endif %}{# end result #}
+
+</div>
+
+<script>
+function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('dropIcon').textContent = '✅';
+  document.getElementById('dropText').textContent = 'File selected — ready to analyse';
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
+  document.getElementById('fileInfo').classList.remove('hidden');
+  document.getElementById('dropZone').classList.add('file-selected');
+}
+function clearFile() {
+  document.getElementById('resumeInput').value = '';
+  document.getElementById('dropIcon').textContent = '📄';
+  document.getElementById('dropText').textContent = 'Click or drag & drop your Resume PDF';
+  document.getElementById('fileInfo').classList.add('hidden');
+  document.getElementById('dropZone').classList.remove('file-selected');
+}
+document.getElementById('uploadForm')?.addEventListener('submit', function() {
+  const btn = document.getElementById('submitBtn');
+  btn.innerHTML = '<span>⏳</span><span>Analysing Resume… Please wait</span>';
+  btn.disabled = true;
+});
+const dz = document.getElementById('dropZone');
+if (dz) {
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f && f.name.endsWith('.pdf')) {
+      const inp = document.getElementById('resumeInput');
+      const dt = new DataTransfer(); dt.items.add(f); inp.files = dt.files;
+      handleFile(inp);
+    }
+  });
+}
+</script>
+{% endblock %}

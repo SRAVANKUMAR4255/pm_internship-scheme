@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% block title %}Add Mentor — PM Internship Scheme{% endblock %}
+
+{% block nav %}
+<style>
+  .admin-nav-link{display:inline-flex;align-items:center;padding:8px 14px;font-size:0.8rem;font-weight:500;color:#64748b;white-space:nowrap;border-bottom:2px solid transparent;transition:all 0.18s ease;text-decoration:none;}
+  .admin-nav-link:hover{color:#1a3a6b;background:#eff6ff;}
+  .admin-nav-link.active{color:#1a3a6b;font-weight:700;border-bottom-color:#1a3a6b;background:#eff6ff;}
+</style>
+<nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="flex items-center justify-between h-12">
+      <div class="flex overflow-x-auto">
+        <a href="{% url 'admin_dashboard' %}" class="admin-nav-link">Dashboard</a>
+        <a href="{% url 'add_mentor' %}" class="admin-nav-link active">Add Mentor</a>
+        <a href="{% url 'admin_feedback' %}" class="admin-nav-link">View Feedback</a>
+      </div>
+      <div class="flex items-center gap-3 ml-3 flex-shrink-0">
+        <div class="hidden md:flex items-center gap-2">
+          <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#1a3a6b,#091e42);color:#fff;font-size:0.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ request.user.full_name|first|upper }}</div>
+          <span style="font-size:0.75rem;color:#64748b;font-weight:500;">{{ request.user.full_name }}</span>
+        </div>
+        <a href="{% url 'admin_logout' %}" class="px-3 py-1.5 text-xs font-bold text-red-600 border border-red-200 rounded-lg hover:bg-red-600 hover:text-white transition-all">Logout</a>
+      </div>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<style>
+  .page-wrapper{max-width:520px;margin:0 auto;padding:32px 16px;}
+
+  .form-card{background:#fff;border-radius:20px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.05),0 8px 32px rgba(26,58,107,0.08);}
+  .form-card-header{background:linear-gradient(145deg,#091e42 0%,#1a3a6b 55%,#1e4a80 100%);padding:24px 32px;position:relative;overflow:hidden;}
+  .form-card-header::before{content:'';position:absolute;top:-40px;right:-30px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(255,153,51,0.12) 0%,transparent 70%);}
+  .tricolor-strip{height:3px;background:linear-gradient(90deg,#FF9933 33.33%,#fff 33.33%,#fff 66.66%,#138808 66.66%);}
+  .form-body{padding:28px 32px 32px;}
+
+  .field-group{margin-bottom:18px;}
+  .field-label{display:block;font-size:0.68rem;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:#475569;margin-bottom:5px;}
+  .field-label .req{color:#dc2626;margin-left:2px;}
+  .field-input{width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:11px 16px;font-size:0.875rem;color:#1e293b;background:#f8fafc;transition:all 0.2s;outline:none;box-sizing:border-box;font-family:'DM Sans',sans-serif;}
+  .field-input::placeholder{color:#94a3b8;}
+  .field-input:focus{border-color:#1a3a6b;background:#fff;box-shadow:0 0 0 3px rgba(26,58,107,0.09);}
+
+  .pwd-wrap{position:relative;}
+  .pwd-wrap .field-input{padding-right:44px;}
+  .pwd-toggle{position:absolute;right:13px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:16px;padding:0;transition:color 0.2s;}
+  .pwd-toggle:hover{color:#1a3a6b;}
+
+  .role-display{width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:11px 16px;font-size:0.875rem;color:#94a3b8;background:#f1f5f9;box-sizing:border-box;display:flex;align-items:center;gap:8px;}
+
+  .btn-cancel{flex:1;text-align:center;display:block;background:#f8fafc;border:1.5px solid #e2e8f0;color:#64748b;font-weight:700;font-size:0.875rem;padding:13px 20px;border-radius:12px;text-decoration:none;transition:all 0.2s;}
+  .btn-cancel:hover{background:#e2e8f0;}
+  .btn-submit{flex:1;text-align:center;display:block;background:linear-gradient(135deg,#138808,#0a5c06);color:#fff;font-weight:700;font-size:0.875rem;padding:13px 20px;border-radius:12px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(19,136,8,0.3);transition:all 0.22s;font-family:'DM Sans',sans-serif;}
+  .btn-submit:hover{box-shadow:0 6px 20px rgba(19,136,8,0.4);transform:translateY(-1px);}
+</style>
+
+<div class="page-wrapper">
+
+  <!-- Breadcrumb -->
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:20px;">
+    <a href="{% url 'admin_dashboard' %}" style="font-size:0.75rem;color:#1a3a6b;text-decoration:none;">← Dashboard</a>
+    <span style="font-size:0.75rem;color:#94a3b8;">/</span>
+    <span style="font-size:0.75rem;color:#475569;font-weight:500;">Add Mentor</span>
+  </div>
+
+  <div class="form-card">
+    <!-- Header -->
+    <div class="form-card-header">
+      <div style="position:relative;z-index:1;display:flex;align-items:center;gap:14px;">
+        <div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;font-size:1.5rem;backdrop-filter:blur(4px);flex-shrink:0;">➕</div>
+        <div>
+          <h2 style="font-family:'DM Serif Display',serif;font-size:1.25rem;color:#fff;margin:0 0 3px;">Add New Mentor</h2>
+          <p style="font-size:0.7rem;color:rgba(147,197,253,0.8);text-transform:uppercase;letter-spacing:0.07em;margin:0;">Admin Action — PM Internship Scheme</p>
+        </div>
+      </div>
+    </div>
+    <div class="tricolor-strip"></div>
+
+    <div class="form-body">
+      <form method="POST" novalidate>
+        {% csrf_token %}
+
+        <div class="field-group">
+          <label class="field-label" for="full_name">Full Name <span class="req">*</span></label>
+          <input class="field-input" type="text" id="full_name" name="full_name" required
+            placeholder="Enter mentor's full name" value="{{ request.POST.full_name }}" autocomplete="off">
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="email">Email Address <span class="req">*</span></label>
+          <input class="field-input" type="email" id="email" name="email" required
+            placeholder="Enter mentor's email" value="{{ request.POST.email }}" autocomplete="off">
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="pwd">Password <span class="req">*</span></label>
+          <div class="pwd-wrap">
+            <input class="field-input" type="password" id="pwd" name="password" required
+              placeholder="Set a password for the mentor" autocomplete="new-password">
+            <button type="button" class="pwd-toggle" id="togglePwd">👁️</button>
+          </div>
+        </div>
+
+        <!-- Role (read-only) -->
+        <div class="field-group" style="margin-bottom:26px;">
+          <label class="field-label">Role</label>
+          <div class="role-display">
+            <span>👨‍💼</span>
+            <span>Mentor</span>
+            <span style="margin-left:auto;background:rgba(19,136,8,0.1);border:1px solid rgba(19,136,8,0.25);color:#138808;font-size:0.65rem;font-weight:700;padding:2px 8px;border-radius:100px;">Auto-assigned</span>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;">
+          <a href="{% url 'admin_dashboard' %}" class="btn-cancel">Cancel</a>
+          <button type="submit" class="btn-submit">✓ Add Mentor</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const btn = document.getElementById('togglePwd');
+  const inp = document.getElementById('pwd');
+  if(btn && inp) btn.addEventListener('click', () => { const t = inp.type==='text'; inp.type=t?'password':'text'; btn.textContent=t?'👁️':'🙈'; });
+</script>
+{% endblock %}

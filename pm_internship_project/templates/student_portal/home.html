@@ -1,0 +1,295 @@
+{% extends 'base.html' %}
+
+{% block title %}Home — PM Internship Scheme Portal{% endblock %}
+
+{% block nav %}
+<nav class="bg-white border-b border-gray-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="flex items-center justify-between h-12">
+            <div class="flex space-x-1">
+                <a href="{% url 'home' %}" class="nav-link active">Home</a>
+                <a href="{% url 'about' %}" class="nav-link">About</a>
+                <a href="{% url 'mentor_login' %}" class="nav-link">Mentor Login</a>
+                <a href="{% url 'admin_login' %}" class="nav-link">Admin Login</a>
+            </div>
+            <div class="flex space-x-2">
+                <a href="{% url 'student_login' %}" class="px-4 py-1.5 text-sm font-semibold text-navy-blue border-2 border-navy-blue rounded-lg hover:bg-navy-blue hover:text-white transition-all duration-200">Login</a>
+                <a href="{% url 'register' %}" class="px-4 py-1.5 text-sm font-semibold text-white bg-india-green rounded-lg hover:bg-green-700 transition-all duration-200 shadow-sm">Register</a>
+            </div>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+
+<style>
+    /* Hero */
+    .hero-section {
+        background: linear-gradient(145deg, #0a1f45 0%, #1a3a6b 50%, #1e4a80 100%);
+        position: relative; overflow: hidden;
+        padding: 80px 0;
+    }
+    .hero-section::before {
+        content: '';
+        position: absolute; inset: 0;
+        background:
+            radial-gradient(ellipse at 10% 50%, rgba(255,153,51,0.12) 0%, transparent 55%),
+            radial-gradient(ellipse at 90% 20%, rgba(19,136,8,0.1) 0%, transparent 50%),
+            radial-gradient(ellipse at 50% 100%, rgba(255,255,255,0.04) 0%, transparent 60%);
+    }
+    .hero-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: rgba(255,153,51,0.15);
+        border: 1px solid rgba(255,153,51,0.4);
+        color: #FF9933;
+        font-size: 0.7rem; font-weight: 700;
+        letter-spacing: 0.1em; text-transform: uppercase;
+        padding: 6px 14px; border-radius: 100px;
+        margin-bottom: 20px;
+    }
+    .hero-title {
+        font-family: 'DM Serif Display', serif;
+        font-size: clamp(2.2rem, 5vw, 3.5rem);
+        color: white; line-height: 1.15;
+        margin-bottom: 12px;
+    }
+    /* Stat bar */
+    .stat-bar {
+        background: linear-gradient(135deg, #FF9933 0%, #e8851f 100%);
+        box-shadow: 0 4px 20px rgba(255,153,51,0.3);
+    }
+    .stat-item { position: relative; }
+    .stat-item:not(:last-child)::after {
+        content: '';
+        position: absolute; right: 0; top: 20%; bottom: 20%;
+        width: 1px;
+        background: rgba(255,255,255,0.3);
+    }
+    /* Feature cards */
+    .feature-card {
+        border-radius: 16px;
+        padding: 28px 24px;
+        transition: all 0.25s ease;
+        position: relative; overflow: hidden;
+    }
+    .feature-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.1);
+    }
+    .feature-card::before {
+        content: '';
+        position: absolute; top: 0; left: 0; right: 0;
+        height: 3px;
+    }
+    .feature-saffron::before { background: linear-gradient(90deg, #FF9933, #ffb866); }
+    .feature-green::before  { background: linear-gradient(90deg, #138808, #22c55e); }
+    .feature-navy::before   { background: linear-gradient(90deg, #1a3a6b, #3b82f6); }
+
+    /* Eligibility */
+    .elig-item {
+        display: flex; align-items: center; gap: 12px;
+        padding: 12px 16px;
+        border-radius: 10px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        font-size: 0.875rem; color: #334155;
+        transition: all 0.2s;
+    }
+    .elig-item:hover {
+        border-color: #138808;
+        background: #f0fdf4;
+    }
+    .elig-icon {
+        width: 28px; height: 28px;
+        border-radius: 50%;
+        background: #dcfce7;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        font-size: 12px; font-weight: 800; color: #138808;
+    }
+
+    /* Portal cards */
+    .portal-card {
+        border-radius: 16px; padding: 24px;
+        text-align: center; text-decoration: none;
+        display: block;
+        transition: all 0.25s ease;
+        position: relative; overflow: hidden;
+    }
+    .portal-card:hover {
+        transform: translateY(-5px);
+    }
+    .portal-card-icon {
+        font-size: 2.5rem; margin-bottom: 12px;
+        display: block;
+        transition: transform 0.3s ease;
+    }
+    .portal-card:hover .portal-card-icon { transform: scale(1.15); }
+
+    /* CTA section */
+    .cta-section {
+        background: linear-gradient(135deg, #0a1f45 0%, #1a3a6b 60%, #1e4a80 100%);
+        border-radius: 20px;
+        padding: 56px 40px;
+        text-align: center;
+        position: relative; overflow: hidden;
+    }
+    .cta-section::before {
+        content: '';
+        position: absolute; inset: 0;
+        background:
+            radial-gradient(circle at 20% 50%, rgba(255,153,51,0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 50%, rgba(19,136,8,0.08) 0%, transparent 50%);
+    }
+</style>
+
+<!-- Hero -->
+<section class="hero-section">
+    <div class="max-w-7xl mx-auto px-4 text-center relative z-10">
+        <div class="hero-badge">
+            <span>🇮🇳</span> Government of India Initiative
+        </div>
+        <h2 class="hero-title">
+            PM Internship<br>Scheme Portal
+        </h2>
+        <p class="text-blue-200/80 text-lg mb-2">प्रधानमंत्री इंटर्नशिप योजना</p>
+        <p class="text-blue-100/60 max-w-xl mx-auto mb-10 text-base leading-relaxed">
+            Empowering India's youth with real-world experience in top companies. Bridging education and industry, one internship at a time.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="{% url 'register' %}"
+               class="inline-flex items-center gap-2 bg-saffron text-white font-bold px-8 py-3.5 rounded-xl shadow-lg hover:bg-orange-500 transition-all duration-200 hover:-translate-y-0.5">
+                Apply Now <span>→</span>
+            </a>
+            <a href="{% url 'about' %}"
+               class="inline-flex items-center gap-2 bg-white/10 border border-white/25 text-white font-semibold px-8 py-3.5 rounded-xl hover:bg-white/20 transition-all duration-200 backdrop-blur-sm">
+                Learn More
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Bar -->
+<section class="stat-bar text-white py-5">
+    <div class="max-w-4xl mx-auto px-4">
+        <div class="grid grid-cols-3 text-center">
+            <div class="stat-item py-1">
+                <div class="text-2xl font-bold font-serif">1 Crore+</div>
+                <div class="text-xs font-medium text-white/80 mt-0.5">Target Interns</div>
+            </div>
+            <div class="stat-item py-1">
+                <div class="text-2xl font-bold font-serif">500+</div>
+                <div class="text-xs font-medium text-white/80 mt-0.5">Partner Companies</div>
+            </div>
+            <div class="stat-item py-1">
+                <div class="text-2xl font-bold font-serif">₹5,000</div>
+                <div class="text-xs font-medium text-white/80 mt-0.5">Monthly Stipend</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features -->
+<section class="py-16 bg-gray-50">
+    <div class="max-w-6xl mx-auto px-4">
+        <div class="text-center mb-12">
+            <span class="text-xs font-bold tracking-widest uppercase text-saffron">Why Join?</span>
+            <h3 class="text-2xl font-serif font-bold text-navy-blue mt-2">Key Features of the Scheme</h3>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="feature-card feature-saffron bg-white border border-gray-100 shadow-sm">
+                <div class="text-3xl mb-4">🎓</div>
+                <h4 class="font-bold text-navy-blue text-base mb-2">Skill Development</h4>
+                <p class="text-gray-500 text-sm leading-relaxed">Gain practical skills in real business environments under expert mentors from top Indian companies.</p>
+            </div>
+            <div class="feature-card feature-green bg-white border border-gray-100 shadow-sm">
+                <div class="text-3xl mb-4">💰</div>
+                <h4 class="font-bold text-navy-blue text-base mb-2">Monthly Stipend</h4>
+                <p class="text-gray-500 text-sm leading-relaxed">Receive ₹5,000 per month plus a one-time assistance of ₹6,000 for incidental expenses at start.</p>
+            </div>
+            <div class="feature-card feature-navy bg-white border border-gray-100 shadow-sm">
+                <div class="text-3xl mb-4">📜</div>
+                <h4 class="font-bold text-navy-blue text-base mb-2">Certificate of Completion</h4>
+                <p class="text-gray-500 text-sm leading-relaxed">Earn a government-recognized certificate upon successful completion of the 12-month internship.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Eligibility -->
+<section class="py-14 bg-white">
+    <div class="max-w-3xl mx-auto px-4">
+        <div class="text-center mb-10">
+            <span class="text-xs font-bold tracking-widest uppercase text-india-green">Eligibility</span>
+            <h3 class="text-2xl font-serif font-bold text-navy-blue mt-2">Who Can Apply?</h3>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="elig-item">
+                <div class="elig-icon">✓</div>
+                <span>Age: 21 to 24 years</span>
+            </div>
+            <div class="elig-item">
+                <div class="elig-icon">✓</div>
+                <span>Not in full-time employment or education</span>
+            </div>
+            <div class="elig-item">
+                <div class="elig-icon">✓</div>
+                <span>ITI certificate / Diploma / Class 10 or 12 pass</span>
+            </div>
+            <div class="elig-item">
+                <div class="elig-icon">✓</div>
+                <span>BA / B.Sc / B.Com / BCA / BBA graduates</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Portal Access -->
+<section class="py-14 bg-gray-50">
+    <div class="max-w-4xl mx-auto px-4 text-center">
+        <span class="text-xs font-bold tracking-widest uppercase text-navy-blue">Access</span>
+        <h3 class="text-2xl font-serif font-bold text-navy-blue mt-2 mb-2">Portal Access</h3>
+        <p class="text-gray-400 text-sm mb-10">Select your role to access the appropriate portal</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <a href="{% url 'student_login' %}"
+               class="portal-card bg-white border-2 border-saffron/30 hover:border-saffron hover:shadow-[0_8px_30px_rgba(255,153,51,0.2)]">
+                <span class="portal-card-icon">👨‍🎓</span>
+                <div class="font-bold text-navy-blue text-base">Student Portal</div>
+                <div class="text-xs text-gray-400 mt-1.5">Register & track your internship</div>
+                <div class="mt-4 text-xs font-semibold text-saffron">Enter →</div>
+            </a>
+            <a href="{% url 'mentor_login' %}"
+               class="portal-card bg-white border-2 border-india-green/30 hover:border-india-green hover:shadow-[0_8px_30px_rgba(19,136,8,0.15)]">
+                <span class="portal-card-icon">👨‍💼</span>
+                <div class="font-bold text-navy-blue text-base">Mentor Portal</div>
+                <div class="text-xs text-gray-400 mt-1.5">Guide and support interns</div>
+                <div class="mt-4 text-xs font-semibold text-india-green">Enter →</div>
+            </a>
+            <a href="{% url 'admin_login' %}"
+               class="portal-card bg-white border-2 border-navy-blue/20 hover:border-navy-blue hover:shadow-[0_8px_30px_rgba(26,58,107,0.15)]">
+                <span class="portal-card-icon">🏛️</span>
+                <div class="font-bold text-navy-blue text-base">Admin Portal</div>
+                <div class="text-xs text-gray-400 mt-1.5">Manage the scheme</div>
+                <div class="mt-4 text-xs font-semibold text-navy-blue">Enter →</div>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="py-14 bg-white">
+    <div class="max-w-4xl mx-auto px-4">
+        <div class="cta-section relative z-10">
+            <span class="text-saffron text-xs font-bold tracking-widest uppercase">Get Started Today</span>
+            <h3 class="text-white font-serif font-bold text-3xl mt-3 mb-3">Ready to Launch Your Career?</h3>
+            <p class="text-blue-300/70 text-sm mb-8 max-w-md mx-auto">Register today and take the first step towards real-world experience at India's top companies.</p>
+            <a href="{% url 'register' %}"
+               class="inline-flex items-center gap-2 bg-saffron text-white font-bold px-10 py-3.5 rounded-xl hover:bg-orange-500 transition-all duration-200 shadow-lg hover:-translate-y-0.5">
+                Register Now <span>→</span>
+            </a>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

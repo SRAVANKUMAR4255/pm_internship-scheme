@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+
+{% block title %}Register — PM Internship Scheme{% endblock %}
+
+{% block nav %}
+<nav class="bg-white border-b border-gray-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="flex items-center justify-between h-12">
+            <div class="flex space-x-1">
+                <a href="{% url 'home' %}" class="nav-link">Home</a>
+                <a href="{% url 'about' %}" class="nav-link">About</a>
+            </div>
+            <div class="flex space-x-2">
+                <a href="{% url 'student_login' %}" class="px-4 py-1.5 text-sm font-semibold text-navy-blue border-2 border-navy-blue rounded-lg hover:bg-navy-blue hover:text-white transition-all duration-200">Login</a>
+                <a href="{% url 'register' %}" class="px-4 py-1.5 text-sm font-semibold text-white bg-india-green rounded-lg shadow-sm">Register</a>
+            </div>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+
+<style>
+    .reg-wrapper {
+        min-height: calc(100vh - 100px);
+        display: flex; align-items: center; justify-content: center;
+        padding: 48px 16px;
+        background-color: #f1f5f9;
+        background-image:
+            radial-gradient(circle at 10% 25%, rgba(19,136,8,0.07) 0%, transparent 50%),
+            radial-gradient(circle at 90% 75%, rgba(255,153,51,0.08) 0%, transparent 50%);
+    }
+    .reg-card {
+        width: 100%; max-width: 480px;
+        background: #fff;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow:
+            0 0 0 1px rgba(26,58,107,0.06),
+            0 20px 60px -10px rgba(26,58,107,0.14);
+        animation: slideUp 0.5s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes slideUp {
+        from { opacity:0; transform:translateY(28px); }
+        to   { opacity:1; transform:translateY(0); }
+    }
+    .card-header {
+        background: linear-gradient(145deg, #0f2952 0%, #1a3a6b 55%, #1e4a80 100%);
+        padding: 32px 32px 28px;
+        text-align: center;
+        position: relative; overflow: hidden;
+    }
+    .card-header::before {
+        content:''; position:absolute; top:-40px; right:-40px;
+        width:130px; height:130px; border-radius:50%;
+        background:radial-gradient(circle, rgba(19,136,8,0.18) 0%, transparent 70%);
+    }
+    .card-header::after {
+        content:''; position:absolute; bottom:-30px; left:-30px;
+        width:100px; height:100px; border-radius:50%;
+        background:radial-gradient(circle, rgba(255,153,51,0.15) 0%, transparent 70%);
+    }
+    .header-icon-ring {
+        width:64px; height:64px; border-radius:50%;
+        background:rgba(255,255,255,0.08);
+        border:2px solid rgba(255,255,255,0.15);
+        display:flex; align-items:center; justify-content:center;
+        margin:0 auto 12px; font-size:26px; z-index:1; position:relative;
+        backdrop-filter:blur(4px);
+        box-shadow:0 4px 20px rgba(0,0,0,0.2);
+    }
+    .tricolor-strip {
+        height:3px;
+        background:linear-gradient(90deg,#FF9933 33.33%,#fff 33.33%,#fff 66.66%,#138808 66.66%);
+    }
+    .card-body { padding: 28px 32px 32px; }
+
+    .field-group { margin-bottom: 18px; }
+    .field-label {
+        display:block; font-size:0.7rem; font-weight:700;
+        letter-spacing:0.09em; text-transform:uppercase;
+        color:#475569; margin-bottom:6px;
+    }
+    .field-input {
+        width:100%; border:1.5px solid #e2e8f0;
+        border-radius:10px; padding:11px 16px;
+        font-size:0.875rem; color:#1e293b;
+        background:#f8fafc; transition:all 0.2s; outline:none;
+        box-sizing:border-box; font-family:'DM Sans',sans-serif;
+    }
+    .field-input::placeholder { color:#94a3b8; }
+    .field-input:focus {
+        border-color:#1a3a6b; background:#fff;
+        box-shadow:0 0 0 3px rgba(26,58,107,0.09);
+    }
+    .password-wrapper { position:relative; }
+    .password-wrapper .field-input { padding-right:44px; }
+    .pwd-toggle {
+        position:absolute; right:13px; top:50%;
+        transform:translateY(-50%);
+        cursor:pointer; color:#94a3b8;
+        background:none; border:none; padding:0;
+        font-size:16px; transition:color 0.2s;
+    }
+    .pwd-toggle:hover { color:#1a3a6b; }
+
+    .role-badge {
+        display:flex; align-items:center; gap:10px;
+        background:#f0fdf4; border:1.5px solid #bbf7d0;
+        border-radius:10px; padding:11px 16px;
+    }
+
+    .btn-register {
+        width:100%;
+        background:linear-gradient(135deg,#138808 0%,#0f6606 100%);
+        color:#fff; font-family:'DM Sans',sans-serif;
+        font-size:0.875rem; font-weight:700;
+        letter-spacing:0.04em;
+        padding:13px 20px; border-radius:10px; border:none;
+        cursor:pointer; margin-top:6px;
+        box-shadow:0 4px 14px rgba(19,136,8,0.35);
+        transition:all 0.22s ease;
+        display:flex; align-items:center; justify-content:center; gap:8px;
+    }
+    .btn-register:hover {
+        background:linear-gradient(135deg,#0f6606 0%,#0a4d04 100%);
+        box-shadow:0 6px 20px rgba(19,136,8,0.45);
+        transform:translateY(-1px);
+    }
+    .progress-steps {
+        display:flex; align-items:center; justify-content:center;
+        gap:8px; margin-bottom:24px;
+    }
+    .step-dot {
+        width:8px; height:8px; border-radius:50%;
+        background:#e2e8f0; transition:all 0.3s;
+    }
+    .step-dot.active { background:#1a3a6b; width:24px; border-radius:4px; }
+</style>
+
+<div class="reg-wrapper">
+    <div style="width:100%;max-width:480px;">
+        <div class="reg-card">
+            <!-- Header -->
+            <div class="card-header">
+                <div class="header-icon-ring">🎓</div>
+                <h2 style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#fff;margin:0 0 5px;position:relative;z-index:1;">Student Registration</h2>
+                <p style="font-size:0.7rem;color:rgba(180,200,230,0.85);letter-spacing:0.08em;text-transform:uppercase;position:relative;z-index:1;">PM Internship Scheme Portal</p>
+            </div>
+            <div class="tricolor-strip"></div>
+
+            <!-- Body -->
+            <div class="card-body">
+                <!-- Progress dots (decorative) -->
+                <div class="progress-steps">
+                    <div class="step-dot active"></div>
+                    <div class="step-dot"></div>
+                    <div class="step-dot"></div>
+                </div>
+
+                <form method="POST" novalidate>
+                    {% csrf_token %}
+
+                    <div class="field-group">
+                        <label class="field-label" for="full_name">Full Name *</label>
+                        <input class="field-input" type="text" id="full_name" name="full_name"
+                            required placeholder="Enter your full name"
+                            value="{{ request.POST.full_name }}">
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label" for="email">Email Address *</label>
+                        <input class="field-input" type="email" id="email" name="email"
+                            required placeholder="yourname@email.com"
+                            value="{{ request.POST.email }}"
+                            autocomplete="email">
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label" for="password">Password *</label>
+                        <div class="password-wrapper">
+                            <input class="field-input" type="password" id="password" name="password"
+                                required placeholder="Minimum 6 characters"
+                                autocomplete="new-password">
+                            <button type="button" class="pwd-toggle" onclick="togglePwd('password', this)">👁️</button>
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label" for="confirm_password">Confirm Password *</label>
+                        <div class="password-wrapper">
+                            <input class="field-input" type="password" id="confirm_password" name="confirm_password"
+                                required placeholder="Re-enter your password"
+                                autocomplete="new-password">
+                            <button type="button" class="pwd-toggle" onclick="togglePwd('confirm_password', this)">👁️</button>
+                        </div>
+                    </div>
+
+                    <!-- Role badge -->
+                    <div class="field-group">
+                        <label class="field-label">Role</label>
+                        <div class="role-badge">
+                            <span style="font-size:1.2rem;">👨‍🎓</span>
+                            <div>
+                                <div style="font-size:0.875rem;font-weight:600;color:#15803d;">Student</div>
+                                <div style="font-size:0.7rem;color:#64748b;">Auto-assigned upon registration</div>
+                            </div>
+                            <span style="margin-left:auto;background:#dcfce7;color:#15803d;font-size:0.65rem;font-weight:700;padding:2px 8px;border-radius:100px;">ASSIGNED</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-register">
+                        Create Account <span>→</span>
+                    </button>
+                </form>
+
+                <p style="text-align:center;font-size:0.8rem;color:#64748b;margin-top:18px;">
+                    Already registered?
+                    <a href="{% url 'student_login' %}" style="color:#1a3a6b;font-weight:700;text-decoration:none;">Login here</a>
+                </p>
+
+                <div style="margin-top:20px;padding-top:18px;border-top:1px solid #f1f5f9;text-align:center;">
+                    <p style="font-size:0.68rem;color:#94a3b8;">
+                        🔒 Secured by Government of India · Ministry of Corporate Affairs
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function togglePwd(id, btn) {
+    const input = document.getElementById(id);
+    const isText = input.type === 'text';
+    input.type = isText ? 'password' : 'text';
+    btn.textContent = isText ? '👁️' : '🙈';
+}
+</script>
+
+{% endblock %}

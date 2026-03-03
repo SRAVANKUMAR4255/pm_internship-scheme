@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% block title %}Applications — PM Internship Scheme{% endblock %}
+
+{% block nav %}
+<style>
+  .mentor-nav-link{display:inline-flex;align-items:center;padding:8px 14px;font-size:0.8rem;font-weight:500;color:#64748b;white-space:nowrap;border-bottom:2px solid transparent;transition:all 0.18s ease;text-decoration:none;}
+  .mentor-nav-link:hover{color:#138808;background:#f0fdf4;}
+  .mentor-nav-link.active{color:#138808;font-weight:700;border-bottom-color:#138808;background:#f0fdf4;}
+</style>
+<nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="flex items-center justify-between h-12">
+      <div class="flex overflow-x-auto">
+        <a href="{% url 'mentor_dashboard' %}" class="mentor-nav-link">Dashboard</a>
+        <a href="{% url 'create_internship' %}" class="mentor-nav-link">Create Internship</a>
+        <a href="{% url 'view_applications' %}" class="mentor-nav-link active">Applications</a>
+        <a href="{% url 'create_class' %}" class="mentor-nav-link">Create Class</a>
+      </div>
+      <div class="flex items-center gap-3 ml-3 flex-shrink-0">
+        <div class="hidden md:flex items-center gap-2">
+          <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#138808,#0a5c06);color:#fff;font-size:0.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ request.user.full_name|first|upper }}</div>
+          <span style="font-size:0.75rem;color:#64748b;font-weight:500;">{{ request.user.full_name }}</span>
+        </div>
+        <a href="{% url 'mentor_logout' %}" class="px-3 py-1.5 text-xs font-bold text-red-600 border border-red-200 rounded-lg hover:bg-red-600 hover:text-white transition-all">Logout</a>
+      </div>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<style>
+  .page-wrapper{max-width:1000px;margin:0 auto;padding:32px 16px;}
+
+  /* Summary banner */
+  .summary-banner{background:linear-gradient(145deg,#0a5c06 0%,#138808 55%,#1aa80a 100%);border-radius:18px;padding:22px 28px;margin-bottom:24px;position:relative;overflow:hidden;}
+  .summary-banner::before{content:'';position:absolute;top:-40px;right:-30px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.07) 0%,transparent 70%);}
+
+  /* Stat cards */
+  .stat-card{background:#fff;border-radius:14px;border:1px solid #e2e8f0;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:all 0.2s;}
+  .stat-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(19,136,8,0.09);}
+
+  /* Application card */
+  .app-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,0.04);transition:all 0.2s;}
+  .app-card:hover{box-shadow:0 6px 22px rgba(26,58,107,0.08);transform:translateY(-1px);}
+
+  .status-bar-pending  {height:3px;background:linear-gradient(90deg,#d97706,#fbbf24);}
+  .status-bar-approved {height:3px;background:linear-gradient(90deg,#138808,#22c55e);}
+  .status-bar-rejected {height:3px;background:linear-gradient(90deg,#dc2626,#f87171);}
+
+  .status-pill{display:inline-flex;align-items:center;gap:5px;font-size:0.72rem;font-weight:700;padding:4px 12px;border-radius:100px;}
+  .status-pill-pending  {background:#fefce8;color:#d97706;border:1px solid #fde68a;}
+  .status-pill-approved {background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;}
+  .status-pill-rejected {background:#fff1f2;color:#dc2626;border:1px solid #fecdd3;}
+
+  .btn-update{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#1a3a6b,#1e4a80);color:#fff;font-size:0.78rem;font-weight:700;padding:9px 18px;border-radius:9px;text-decoration:none;box-shadow:0 3px 10px rgba(26,58,107,0.2);transition:all 0.2s;white-space:nowrap;}
+  .btn-update:hover{box-shadow:0 5px 16px rgba(26,58,107,0.3);transform:translateY(-1px);}
+
+  .meta-chip{font-size:0.72rem;color:#64748b;display:inline-flex;align-items:center;gap:3px;}
+  .empty-state{text-align:center;padding:80px 20px;color:#94a3b8;}
+
+  /* Toast */
+  .toast{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;margin-bottom:14px;font-size:0.875rem;font-weight:500;}
+  .toast-success{background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;}
+  .toast-error{background:#fff1f2;border:1px solid #fecdd3;color:#dc2626;}
+</style>
+
+<div class="page-wrapper">
+
+  {% for message in messages %}
+  <div class="toast {% if message.tags == 'success' %}toast-success{% else %}toast-error{% endif %}">
+    <span>{% if message.tags == 'success' %}✅{% else %}❌{% endif %}</span>
+    <span>{{ message }}</span>
+  </div>
+  {% endfor %}
+
+  <!-- Breadcrumb -->
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;">
+    <a href="{% url 'mentor_dashboard' %}" style="font-size:0.75rem;color:#1a3a6b;text-decoration:none;">← Dashboard</a>
+    <span style="font-size:0.75rem;color:#94a3b8;">/</span>
+    <span style="font-size:0.75rem;color:#475569;font-weight:500;">Student Applications</span>
+  </div>
+
+  <!-- Summary Banner -->
+  <div class="summary-banner">
+    <div style="position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+      <div>
+        <p style="color:rgba(187,247,208,0.7);font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;margin:0 0 5px;">Mentor Portal</p>
+        <h2 style="font-family:'DM Serif Display',serif;font-size:1.5rem;color:#fff;margin:0;">Student Applications</h2>
+      </div>
+      <span style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);color:#fff;font-size:0.78rem;font-weight:700;padding:6px 16px;border-radius:100px;">{{ total }} Total Application{{ total|pluralize }}</span>
+    </div>
+  </div>
+
+  <!-- Stat Cards -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px;">
+    <div class="stat-card" style="border-left:3px solid #64748b;">
+      <p style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.07em;margin:0 0 4px;">Total</p>
+      <p style="font-family:'DM Serif Display',serif;font-size:2rem;color:#1a3a6b;margin:0;line-height:1;">{{ total }}</p>
+    </div>
+    <div class="stat-card" style="border-left:3px solid #d97706;">
+      <p style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.07em;margin:0 0 4px;">⏳ Pending</p>
+      <p style="font-family:'DM Serif Display',serif;font-size:2rem;color:#d97706;margin:0;line-height:1;">{{ pending }}</p>
+    </div>
+    <div class="stat-card" style="border-left:3px solid #16a34a;">
+      <p style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.07em;margin:0 0 4px;">✅ Approved</p>
+      <p style="font-family:'DM Serif Display',serif;font-size:2rem;color:#16a34a;margin:0;line-height:1;">{{ approved }}</p>
+    </div>
+    <div class="stat-card" style="border-left:3px solid #dc2626;">
+      <p style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.07em;margin:0 0 4px;">❌ Rejected</p>
+      <p style="font-family:'DM Serif Display',serif;font-size:2rem;color:#dc2626;margin:0;line-height:1;">{{ rejected }}</p>
+    </div>
+  </div>
+
+  <!-- Applications List -->
+  {% if applications %}
+  {% for app in applications %}
+  <div class="app-card">
+    <div class="status-bar-{{ app.status }}"></div>
+    <div style="padding:18px 20px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+
+        <!-- Left: Student + Internship Info -->
+        <div style="flex:1;min-width:240px;">
+
+          <!-- Student -->
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#1a3a6b,#1e4a80);color:#fff;font-family:'DM Serif Display',serif;font-size:1.1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 10px rgba(26,58,107,0.2);">{{ app.student.full_name|first|upper }}</div>
+            <div>
+              <p style="font-weight:700;color:#1e293b;font-size:0.925rem;margin:0 0 2px;">{{ app.student.full_name }}</p>
+              <p style="font-size:0.72rem;color:#94a3b8;margin:0;">{{ app.student.email }}</p>
+            </div>
+          </div>
+
+          <!-- Internship details -->
+          <div style="background:#f8fafc;border-radius:10px;padding:12px 14px;border:1px solid #e2e8f0;margin-bottom:10px;">
+            <p style="font-family:'DM Serif Display',serif;font-size:0.95rem;color:#1a3a6b;font-weight:700;margin:0 0 5px;">{{ app.internship.title }}</p>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;">
+              <span class="meta-chip">🏢 {{ app.internship.company_name }}</span>
+              <span class="meta-chip">📍 {{ app.internship.location }}</span>
+              <span class="meta-chip">🏢 {{ app.internship.get_mode_display }}</span>
+              <span class="meta-chip">💰 ₹{{ app.internship.stipend_amount }}/mo</span>
+              <span class="meta-chip">⏱ {{ app.internship.get_duration_display }}</span>
+            </div>
+          </div>
+
+          <!-- Timing -->
+          <div style="display:flex;flex-wrap:wrap;gap:14px;">
+            <span style="font-size:0.72rem;color:#94a3b8;">📅 Applied: <strong style="color:#475569;">{{ app.applied_at|date:"d M Y, h:i A" }}</strong></span>
+            {% if app.updated_at != app.applied_at %}
+            <span style="font-size:0.72rem;color:#94a3b8;">🔄 Updated: <strong style="color:#475569;">{{ app.updated_at|date:"d M Y" }}</strong></span>
+            {% endif %}
+          </div>
+
+          <!-- Existing message preview -->
+          {% if app.status_message %}
+          <div style="margin-top:10px;background:{% if app.status == 'approved' %}#f0fdf4{% elif app.status == 'rejected' %}#fff1f2{% else %}#fefce8{% endif %};border-radius:8px;padding:10px 12px;border-left:3px solid {% if app.status == 'approved' %}#16a34a{% elif app.status == 'rejected' %}#dc2626{% else %}#d97706{% endif %};">
+            <p style="font-size:0.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:0 0 3px;">Current Message to Student</p>
+            <p style="font-size:0.8rem;color:#334155;line-height:1.6;margin:0;font-style:italic;">"{{ app.status_message }}"</p>
+          </div>
+          {% endif %}
+
+        </div>
+
+        <!-- Right: Status + Update button -->
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0;">
+          <span class="status-pill status-pill-{{ app.status }}">
+            {% if app.status == 'approved' %}✅ Approved
+            {% elif app.status == 'rejected' %}❌ Rejected
+            {% else %}⏳ Pending{% endif %}
+          </span>
+          <a href="{% url 'update_application' app.pk %}" class="btn-update">
+            ✏️ Update Status
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  {% else %}
+  <div class="empty-state">
+    <div style="font-size:3.5rem;margin-bottom:14px;">📋</div>
+    <p style="font-size:1rem;font-weight:600;color:#475569;margin-bottom:6px;">No applications yet.</p>
+    <p style="font-size:0.875rem;">Applications from students will appear here once they apply to your internships.</p>
+    <a href="{% url 'create_internship' %}" style="display:inline-flex;margin-top:18px;align-items:center;gap:6px;background:linear-gradient(135deg,#138808,#0a5c06);color:#fff;font-size:0.8rem;font-weight:700;padding:11px 22px;border-radius:10px;text-decoration:none;box-shadow:0 3px 10px rgba(19,136,8,0.25);">+ Create an Internship</a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

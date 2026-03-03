@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+{% block title %}Create Internship — PM Internship Scheme{% endblock %}
+
+{% block nav %}
+<style>
+  .mentor-nav-link{display:inline-flex;align-items:center;padding:8px 14px;font-size:0.8rem;font-weight:500;color:#64748b;white-space:nowrap;border-bottom:2px solid transparent;transition:all 0.18s ease;text-decoration:none;}
+  .mentor-nav-link:hover{color:#138808;background:#f0fdf4;}
+  .mentor-nav-link.active{color:#138808;font-weight:700;border-bottom-color:#138808;background:#f0fdf4;}
+</style>
+<nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="flex items-center justify-between h-12">
+      <div class="flex overflow-x-auto">
+        <a href="{% url 'mentor_dashboard' %}" class="mentor-nav-link">Dashboard</a>
+        <a href="{% url 'create_internship' %}" class="mentor-nav-link active">Create Internship</a>
+        <a href="{% url 'view_applications' %}" class="mentor-nav-link">Applications</a>
+        <a href="{% url 'create_class' %}" class="mentor-nav-link">Create Class</a>
+      </div>
+      <div class="flex items-center gap-3 ml-3 flex-shrink-0">
+        <div class="hidden md:flex items-center gap-2">
+          <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#138808,#0a5c06);color:#fff;font-size:0.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ request.user.full_name|first|upper }}</div>
+          <span style="font-size:0.75rem;color:#64748b;font-weight:500;">{{ request.user.full_name }}</span>
+        </div>
+        <a href="{% url 'mentor_logout' %}" class="px-3 py-1.5 text-xs font-bold text-red-600 border border-red-200 rounded-lg hover:bg-red-600 hover:text-white transition-all">Logout</a>
+      </div>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<style>
+  .page-wrapper{max-width:860px;margin:0 auto;padding:32px 16px;}
+
+  .form-card{background:#fff;border-radius:20px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.05),0 8px 32px rgba(26,58,107,0.06);}
+  .form-card-header{background:linear-gradient(145deg,#0f2952 0%,#1a3a6b 55%,#1e4a80 100%);padding:24px 32px;position:relative;overflow:hidden;}
+  .form-card-header::before{content:'';position:absolute;top:-40px;right:-30px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(255,153,51,0.15) 0%,transparent 70%);}
+  .tricolor-strip{height:3px;background:linear-gradient(90deg,#FF9933 33.33%,#fff 33.33%,#fff 66.66%,#138808 66.66%);}
+  .form-body{padding:32px;}
+
+  /* Section step */
+  .form-section{margin-bottom:32px;}
+  .section-title{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid #f1f5f9;}
+  .step-badge{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#FF9933,#e8851f);color:#fff;font-size:0.8rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(255,153,51,0.3);}
+  .step-badge.green{background:linear-gradient(135deg,#138808,#0a5c06);box-shadow:0 2px 8px rgba(19,136,8,0.3);}
+  .section-title h3{font-family:'DM Serif Display',serif;font-size:0.95rem;color:#1a3a6b;margin:0;letter-spacing:0.02em;}
+
+  /* Form fields */
+  .field-group{margin-bottom:16px;}
+  .field-label{display:block;font-size:0.68rem;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:#475569;margin-bottom:5px;}
+  .field-label .req{color:#dc2626;margin-left:2px;}
+  .field-input, .field-select, .field-textarea{width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 14px;font-size:0.875rem;color:#1e293b;background:#f8fafc;transition:all 0.2s;outline:none;box-sizing:border-box;font-family:'DM Sans',sans-serif;}
+  .field-input:focus,.field-select:focus,.field-textarea:focus{border-color:#1a3a6b;background:#fff;box-shadow:0 0 0 3px rgba(26,58,107,0.08);}
+  .field-input::placeholder,.field-textarea::placeholder{color:#94a3b8;}
+  .field-textarea{resize:none;}
+  .field-hint{font-size:0.68rem;color:#94a3b8;margin-top:4px;}
+
+  /* Grid layouts */
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+  .col-2{grid-column:span 2;}
+  @media(max-width:640px){.grid-2,.grid-3{grid-template-columns:1fr;}.col-2{grid-column:span 1;}}
+
+  /* Form section divider */
+  .form-divider{border:none;border-top:1px solid #f1f5f9;margin:28px 0;}
+
+  /* Submit row */
+  .btn-cancel{flex:1;text-align:center;display:block;background:#f8fafc;border:1.5px solid #e2e8f0;color:#64748b;font-weight:700;font-size:0.875rem;padding:13px 20px;border-radius:12px;text-decoration:none;transition:all 0.2s;}
+  .btn-cancel:hover{background:#e2e8f0;}
+  .btn-submit{flex:1;text-align:center;display:block;background:linear-gradient(135deg,#138808,#0a5c06);color:#fff;font-weight:700;font-size:0.875rem;padding:13px 20px;border-radius:12px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(19,136,8,0.3);transition:all 0.22s;font-family:'DM Sans',sans-serif;}
+  .btn-submit:hover{box-shadow:0 6px 20px rgba(19,136,8,0.4);transform:translateY(-1px);}
+</style>
+
+<div class="page-wrapper">
+
+  <!-- Breadcrumb -->
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:20px;">
+    <a href="{% url 'mentor_dashboard' %}" style="font-size:0.75rem;color:#1a3a6b;text-decoration:none;">← Dashboard</a>
+    <span style="font-size:0.75rem;color:#94a3b8;">/</span>
+    <span style="font-size:0.75rem;color:#475569;font-weight:500;">Create Internship</span>
+  </div>
+
+  <div class="form-card">
+    <!-- Header -->
+    <div class="form-card-header">
+      <div style="position:relative;z-index:1;display:flex;align-items:center;gap:16px;">
+        <div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;font-size:1.5rem;backdrop-filter:blur(4px);flex-shrink:0;">📋</div>
+        <div>
+          <h2 style="font-family:'DM Serif Display',serif;font-size:1.3rem;color:#fff;margin:0 0 4px;">Create New Internship</h2>
+          <p style="font-size:0.7rem;color:rgba(147,197,253,0.8);text-transform:uppercase;letter-spacing:0.07em;margin:0;">Fill all required fields marked with <span style="color:#fca5a5;font-weight:700;">*</span></p>
+        </div>
+      </div>
+    </div>
+    <div class="tricolor-strip"></div>
+
+    <form method="POST" class="form-body">
+      {% csrf_token %}
+
+      <!-- Section 1: Basic Info -->
+      <div class="form-section">
+        <div class="section-title">
+          <div class="step-badge">1</div>
+          <h3>Basic Information</h3>
+        </div>
+        <div class="grid-2">
+          <div class="field-group">
+            <label class="field-label">Internship Title <span class="req">*</span></label>
+            <input class="field-input" type="text" name="title" required value="{{ post.title|default:'' }}" placeholder="e.g. Software Development Intern">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Company / Organisation <span class="req">*</span></label>
+            <input class="field-input" type="text" name="company_name" required value="{{ post.company_name|default:'' }}" placeholder="e.g. TechCorp India Pvt. Ltd.">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Sector / Industry <span class="req">*</span></label>
+            <select class="field-select" name="sector" required>
+              <option value="">— Select Sector —</option>
+              <option value="technology" {% if post.sector == 'technology' %}selected{% endif %}>Technology & IT</option>
+              <option value="finance" {% if post.sector == 'finance' %}selected{% endif %}>Finance & Banking</option>
+              <option value="marketing" {% if post.sector == 'marketing' %}selected{% endif %}>Marketing & Sales</option>
+              <option value="engineering" {% if post.sector == 'engineering' %}selected{% endif %}>Engineering & Manufacturing</option>
+              <option value="healthcare" {% if post.sector == 'healthcare' %}selected{% endif %}>Healthcare & Pharma</option>
+              <option value="education" {% if post.sector == 'education' %}selected{% endif %}>Education & Training</option>
+              <option value="legal" {% if post.sector == 'legal' %}selected{% endif %}>Legal & Compliance</option>
+              <option value="design" {% if post.sector == 'design' %}selected{% endif %}>Design & Creative</option>
+              <option value="logistics" {% if post.sector == 'logistics' %}selected{% endif %}>Logistics & Supply Chain</option>
+              <option value="agriculture" {% if post.sector == 'agriculture' %}selected{% endif %}>Agriculture & Rural Development</option>
+              <option value="other" {% if post.sector == 'other' %}selected{% endif %}>Other</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Work Mode <span class="req">*</span></label>
+            <select class="field-select" name="mode" required>
+              <option value="onsite" {% if post.mode == 'onsite' %}selected{% endif %}>🏢 On-Site</option>
+              <option value="remote" {% if post.mode == 'remote' %}selected{% endif %}>🏠 Remote</option>
+              <option value="hybrid" {% if post.mode == 'hybrid' %}selected{% endif %}>🔄 Hybrid</option>
+            </select>
+          </div>
+          <div class="field-group col-2">
+            <label class="field-label">Location (City / State) <span class="req">*</span></label>
+            <input class="field-input" type="text" name="location" required value="{{ post.location|default:'' }}" placeholder="e.g. New Delhi, Maharashtra / Pan India">
+          </div>
+          <div class="field-group col-2">
+            <label class="field-label">Internship Description <span class="req">*</span></label>
+            <textarea class="field-textarea" name="description" rows="4" required placeholder="Describe the internship role, work environment and overview...">{{ post.description|default:'' }}</textarea>
+          </div>
+          <div class="field-group col-2">
+            <label class="field-label">Key Responsibilities</label>
+            <textarea class="field-textarea" name="responsibilities" rows="3" placeholder="List key day-to-day responsibilities of the intern...">{{ post.responsibilities|default:'' }}</textarea>
+          </div>
+        </div>
+      </div>
+      <hr class="form-divider">
+
+      <!-- Section 2: Duration & Compensation -->
+      <div class="form-section">
+        <div class="section-title">
+          <div class="step-badge">2</div>
+          <h3>Duration & Compensation</h3>
+        </div>
+        <div class="grid-3">
+          <div class="field-group">
+            <label class="field-label">Duration <span class="req">*</span></label>
+            <select class="field-select" name="duration" required>
+              <option value="1" {% if post.duration == '1' %}selected{% endif %}>1 Month</option>
+              <option value="2" {% if post.duration == '2' %}selected{% endif %}>2 Months</option>
+              <option value="3" {% if post.duration == '3' %}selected{% endif %}>3 Months</option>
+              <option value="6" {% if post.duration == '6' %}selected{% endif %}>6 Months</option>
+              <option value="12" {% if post.duration == '12' %}selected{% endif %}>12 Months</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Monthly Stipend (₹) <span class="req">*</span></label>
+            <input class="field-input" type="number" name="stipend_amount" required min="0" value="{{ post.stipend_amount|default:'5000' }}" placeholder="5000">
+          </div>
+          <div class="field-group">
+            <label class="field-label">No. of Openings <span class="req">*</span></label>
+            <input class="field-input" type="number" name="openings" required min="1" value="{{ post.openings|default:'1' }}" placeholder="1">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Last Date to Apply</label>
+            <input class="field-input" type="date" name="last_date_to_apply" value="{{ post.last_date_to_apply|default:'' }}">
+          </div>
+          <div class="field-group col-2">
+            <label class="field-label">Perks & Benefits</label>
+            <input class="field-input" type="text" name="perks" value="{{ post.perks|default:'' }}" placeholder="e.g. Certificate, Letter of Recommendation, PPO, Flexible Hours">
+          </div>
+        </div>
+      </div>
+      <hr class="form-divider">
+
+      <!-- Section 3: Eligibility -->
+      <div class="form-section">
+        <div class="section-title">
+          <div class="step-badge">3</div>
+          <h3>Eligibility & Requirements</h3>
+        </div>
+        <div class="grid-2">
+          <div class="field-group">
+            <label class="field-label">Minimum Qualification <span class="req">*</span></label>
+            <select class="field-select" name="qualification_required" required>
+              <option value="">— Select Qualification —</option>
+              <option value="class10" {% if post.qualification_required == 'class10' %}selected{% endif %}>Class 10 Pass</option>
+              <option value="class12" {% if post.qualification_required == 'class12' %}selected{% endif %}>Class 12 Pass</option>
+              <option value="iti" {% if post.qualification_required == 'iti' %}selected{% endif %}>ITI Certificate</option>
+              <option value="diploma" {% if post.qualification_required == 'diploma' %}selected{% endif %}>Diploma</option>
+              <option value="graduate" {% if post.qualification_required == 'graduate' %}selected{% endif %}>Graduate (Any Stream)</option>
+              <option value="btech" {% if post.qualification_required == 'btech' %}selected{% endif %}>B.Tech / B.E.</option>
+              <option value="bsc" {% if post.qualification_required == 'bsc' %}selected{% endif %}>B.Sc</option>
+              <option value="bcom" {% if post.qualification_required == 'bcom' %}selected{% endif %}>B.Com</option>
+              <option value="ba" {% if post.qualification_required == 'ba' %}selected{% endif %}>B.A.</option>
+              <option value="bca" {% if post.qualification_required == 'bca' %}selected{% endif %}>BCA / BBA</option>
+              <option value="postgraduate" {% if post.qualification_required == 'postgraduate' %}selected{% endif %}>Post Graduate</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Age Range <span class="req">*</span></label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input class="field-input" type="number" name="age_min" required min="15" max="40" value="{{ post.age_min|default:'18' }}" placeholder="Min">
+              <span style="font-size:0.8rem;color:#94a3b8;flex-shrink:0;">to</span>
+              <input class="field-input" type="number" name="age_max" required min="15" max="40" value="{{ post.age_max|default:'25' }}" placeholder="Max">
+              <span style="font-size:0.75rem;color:#94a3b8;flex-shrink:0;">yrs</span>
+            </div>
+          </div>
+          <div class="field-group col-2">
+            <label class="field-label">Skills Required <span class="req">*</span></label>
+            <input class="field-input" type="text" name="skills_required" required value="{{ post.skills_required|default:'' }}" placeholder="e.g. Python, MS Excel, Communication Skills, Teamwork">
+            <p class="field-hint">Comma-separated list of required skills</p>
+          </div>
+          <div class="field-group col-2">
+            <label class="field-label">Additional Eligibility Criteria</label>
+            <textarea class="field-textarea" name="eligibility" rows="2" placeholder="Any other eligibility requirements...">{{ post.eligibility|default:'' }}</textarea>
+          </div>
+          <div class="field-group col-2">
+            <label class="field-label">Learning Outcomes for Intern</label>
+            <textarea class="field-textarea" name="learning_outcomes" rows="2" placeholder="What will the intern gain or learn...">{{ post.learning_outcomes|default:'' }}</textarea>
+          </div>
+        </div>
+      </div>
+      <hr class="form-divider">
+
+      <!-- Section 4: Contact -->
+      <div class="form-section">
+        <div class="section-title">
+          <div class="step-badge green">4</div>
+          <h3>Contact Details <span style="font-size:0.75rem;font-weight:400;color:#94a3b8;">(Optional)</span></h3>
+        </div>
+        <div class="grid-2">
+          <div class="field-group">
+            <label class="field-label">Contact Email</label>
+            <input class="field-input" type="email" name="contact_email" value="{{ post.contact_email|default:'' }}" placeholder="hr@company.com">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Contact Phone</label>
+            <input class="field-input" type="text" name="contact_phone" value="{{ post.contact_phone|default:'' }}" placeholder="+91 98765 43210">
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <div style="display:flex;gap:12px;padding-top:8px;">
+        <a href="{% url 'mentor_dashboard' %}" class="btn-cancel">Cancel</a>
+        <button type="submit" class="btn-submit">✓ Create Internship</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

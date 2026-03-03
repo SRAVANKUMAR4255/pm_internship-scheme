@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+{% block title %}Available Internships — PM Internship Scheme{% endblock %}
+
+{% block nav %}
+<style>
+  .student-nav-link{display:inline-flex;align-items:center;padding:8px 14px;font-size:0.8rem;font-weight:500;color:#64748b;white-space:nowrap;border-bottom:2px solid transparent;transition:all 0.18s ease;text-decoration:none;}
+  .student-nav-link:hover{color:#1a3a6b;background:#f8fafc;}
+  .student-nav-link.active{color:#1a3a6b;font-weight:700;border-bottom-color:#FF9933;background:#FFF3E0;}
+</style>
+<nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="flex items-center justify-between h-12">
+      <div class="flex overflow-x-auto">
+        <a href="{% url 'student_dashboard' %}" class="student-nav-link">Dashboard</a>
+        <a href="{% url 'prediction' %}" class="student-nav-link">Prediction</a>
+        <a href="{% url 'view_internships' %}" class="student-nav-link active">Internships</a>
+        <a href="{% url 'application_status' %}" class="student-nav-link">Applications</a>
+        <a href="{% url 'learn_classes' %}" class="student-nav-link">Classes</a>
+        <a href="{% url 'my_profile' %}" class="student-nav-link">Profile</a>
+        <a href="{% url 'submit_feedback' %}" class="student-nav-link">Feedback</a>
+      </div>
+      <div class="flex items-center gap-3 ml-3 flex-shrink-0">
+        <div class="hidden md:flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full bg-navy-blue text-white text-xs font-bold flex items-center justify-center">{{ request.user.full_name|first|upper }}</div>
+          <span class="text-xs text-gray-600 font-medium">{{ request.user.full_name }}</span>
+        </div>
+        <a href="{% url 'student_logout' %}" class="px-3 py-1.5 text-xs font-bold text-red-600 border border-red-200 rounded-lg hover:bg-red-600 hover:text-white transition-all">Logout</a>
+      </div>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<style>
+  .page-wrapper { max-width:900px;margin:0 auto;padding:32px 16px; }
+
+  /* Internship card */
+  .int-card {
+    background:#fff;border-radius:16px;
+    border:1px solid #e2e8f0;overflow:hidden;
+    box-shadow:0 1px 4px rgba(0,0,0,0.04);
+    margin-bottom:16px;
+    transition:box-shadow 0.2s,transform 0.2s;
+  }
+  .int-card:hover{box-shadow:0 8px 30px rgba(26,58,107,0.1);transform:translateY(-2px);}
+  .int-card-bar{height:3px;background:linear-gradient(90deg,#FF9933,#ffb866);}
+
+  /* Stats row inside card */
+  .int-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0;}
+  @media(max-width:600px){.int-stats{grid-template-columns:1fr 1fr;}}
+  .int-stat{border-radius:8px;padding:10px 12px;text-align:center;}
+
+  /* Skill/perk tags */
+  .skill-tag{display:inline-flex;align-items:center;background:#1a3a6b;color:#fff;font-size:0.68rem;font-weight:600;padding:3px 10px;border-radius:100px;margin:2px;}
+  .perk-tag{display:inline-flex;align-items:center;background:#f0fdf4;color:#138808;border:1px solid #bbf7d0;font-size:0.68rem;font-weight:600;padding:3px 10px;border-radius:100px;margin:2px;}
+
+  /* Apply button */
+  .btn-apply{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#138808,#0f6606);color:#fff;font-size:0.8rem;font-weight:700;padding:10px 20px;border-radius:10px;text-decoration:none;box-shadow:0 3px 10px rgba(19,136,8,0.25);transition:all 0.2s;}
+  .btn-apply:hover{box-shadow:0 6px 18px rgba(19,136,8,0.35);transform:translateY(-1px);}
+
+  /* Applied badge */
+  .applied-badge{display:inline-flex;align-items:center;gap:4px;background:#f8fafc;border:1.5px solid #e2e8f0;color:#64748b;font-size:0.78rem;font-weight:700;padding:8px 16px;border-radius:10px;}
+
+  .meta-chip{font-size:0.72rem;color:#64748b;display:inline-flex;align-items:center;gap:3px;}
+
+  .empty-state{text-align:center;padding:80px 20px;color:#94a3b8;}
+</style>
+
+<div class="page-wrapper">
+
+  <!-- Page header -->
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:28px;">
+    <div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+        <a href="{% url 'student_dashboard' %}" style="font-size:0.75rem;color:#1a3a6b;text-decoration:none;">← Dashboard</a>
+        <span style="font-size:0.75rem;color:#94a3b8;">/</span>
+        <span style="font-size:0.75rem;color:#475569;font-weight:500;">Internships</span>
+      </div>
+      <h2 style="font-family:'DM Serif Display',serif;font-size:1.6rem;color:#1a3a6b;margin:0 0 4px;">Available Internships</h2>
+      <p style="font-size:0.8rem;color:#94a3b8;">{{ total_internships }} internship{{ total_internships|pluralize }} open · {{ total_applied }} applied by you</p>
+    </div>
+    <a href="{% url 'application_status' %}" style="display:inline-flex;align-items:center;gap:6px;font-size:0.78rem;font-weight:600;color:#FF9933;border:1.5px solid #FF9933;padding:8px 16px;border-radius:9px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.background='#FF9933';this.style.color='white'" onmouseout="this.style.background='transparent';this.style.color='#FF9933'">
+      My Applications →
+    </a>
+  </div>
+
+  {% if internships %}
+  {% for internship in internships %}
+  <div class="int-card">
+    <div class="int-card-bar"></div>
+
+    <div style="padding:20px;">
+      <!-- Header -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+        <div style="flex:1;min-width:200px;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+            <h3 style="font-family:'DM Serif Display',serif;font-size:1.05rem;color:#1a3a6b;margin:0;">{{ internship.title }}</h3>
+            {% if internship.is_active %}
+            <span style="background:#dcfce7;color:#15803d;font-size:0.65rem;font-weight:700;padding:2px 8px;border-radius:100px;">● Active</span>
+            {% endif %}
+          </div>
+          <p style="font-size:0.875rem;font-weight:600;color:#475569;margin:0 0 8px;">{{ internship.company_name }}</p>
+          <div style="display:flex;flex-wrap:wrap;gap:12px;">
+            {% if internship.location %}<span class="meta-chip">📍 {{ internship.location }}</span>{% endif %}
+            {% if internship.get_mode_display %}<span class="meta-chip">🏢 {{ internship.get_mode_display }}</span>{% endif %}
+            {% if internship.get_sector_display %}<span class="meta-chip">🏭 {{ internship.get_sector_display }}</span>{% endif %}
+            <span class="meta-chip">📅 {{ internship.created_at|date:"d M Y" }}</span>
+          </div>
+        </div>
+
+        <!-- Apply / Applied -->
+        <div style="flex-shrink:0;text-align:right;">
+          {% if internship.id in applied_ids %}
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+            <span class="applied-badge">✓ Applied</span>
+            <a href="{% url 'application_status' %}" style="font-size:0.7rem;color:#1a3a6b;text-decoration:none;font-weight:600;">Check status →</a>
+          </div>
+          {% else %}
+          <div>
+            <a href="{% url 'apply_internship' internship.pk %}" class="btn-apply">Apply Now →</a>
+            {% if internship.last_date_to_apply %}
+            <p style="font-size:0.7rem;color:#dc2626;margin-top:5px;text-align:right;">Deadline: {{ internship.last_date_to_apply|date:"d M Y" }}</p>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="int-stats">
+        <div class="int-stat" style="background:#FFF3E0;">
+          <p style="font-size:0.65rem;color:#94a3b8;margin-bottom:3px;">Stipend</p>
+          <p style="font-size:0.85rem;font-weight:700;color:#1a3a6b;">₹{{ internship.stipend_amount|default:"5,000" }}/mo</p>
+        </div>
+        <div class="int-stat" style="background:#E8F5E9;">
+          <p style="font-size:0.65rem;color:#94a3b8;margin-bottom:3px;">Duration</p>
+          <p style="font-size:0.85rem;font-weight:700;color:#1a3a6b;">{{ internship.get_duration_display }}</p>
+        </div>
+        <div class="int-stat" style="background:#eff6ff;">
+          <p style="font-size:0.65rem;color:#94a3b8;margin-bottom:3px;">Openings</p>
+          <p style="font-size:0.85rem;font-weight:700;color:#1a3a6b;">{{ internship.openings }} seat{{ internship.openings|pluralize }}</p>
+        </div>
+        <div class="int-stat" style="background:#f5f3ff;">
+          <p style="font-size:0.65rem;color:#94a3b8;margin-bottom:3px;">Qualification</p>
+          <p style="font-size:0.85rem;font-weight:700;color:#1a3a6b;">{{ internship.get_qualification_required_display }}</p>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <p style="font-size:0.875rem;color:#475569;line-height:1.7;margin-bottom:14px;">{{ internship.description|truncatewords:40 }}</p>
+
+      {% if internship.responsibilities %}
+      <div style="margin-bottom:12px;">
+        <p style="font-size:0.65rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px;">Key Responsibilities</p>
+        <p style="font-size:0.8rem;color:#475569;line-height:1.6;">{{ internship.responsibilities|truncatewords:30 }}</p>
+      </div>
+      {% endif %}
+
+      {% if internship.skills_required %}
+      <div style="margin-bottom:12px;">
+        <p style="font-size:0.65rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:7px;">Skills Required</p>
+        <div>{% for skill in internship.get_skills_list %}<span class="skill-tag">{{ skill }}</span>{% endfor %}</div>
+      </div>
+      {% endif %}
+
+      {% if internship.perks %}
+      <div style="margin-bottom:12px;">
+        <p style="font-size:0.65rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:7px;">Perks & Benefits</p>
+        <div>{% for perk in internship.get_perks_list %}<span class="perk-tag">🎁 {{ perk }}</span>{% endfor %}</div>
+      </div>
+      {% endif %}
+
+      <!-- Eligibility -->
+      <div style="background:#f8fafc;border-radius:10px;padding:12px 16px;border:1px solid #e2e8f0;margin-bottom:12px;">
+        <div style="display:flex;flex-wrap:wrap;gap:16px;">
+          <div style="font-size:0.78rem;color:#475569;">
+            <span style="font-weight:700;color:#64748b;">Age: </span>{{ internship.age_min }}–{{ internship.age_max }} years
+          </div>
+          {% if internship.eligibility %}
+          <div style="font-size:0.78rem;color:#475569;">
+            <span style="font-weight:700;color:#64748b;">Eligibility: </span>{{ internship.eligibility }}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if internship.learning_outcomes %}
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-bottom:12px;">
+        <p style="font-size:0.7rem;font-weight:700;color:#1d4ed8;margin-bottom:4px;">📈 What You Will Gain</p>
+        <p style="font-size:0.8rem;color:#334155;line-height:1.6;">{{ internship.learning_outcomes }}</p>
+      </div>
+      {% endif %}
+
+      <!-- Footer -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid #f1f5f9;flex-wrap:wrap;gap:8px;">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <span style="font-size:0.72rem;color:#94a3b8;">👨‍💼 {{ internship.mentor.full_name }}</span>
+          {% if internship.contact_email %}<span style="font-size:0.72rem;color:#94a3b8;">📧 {{ internship.contact_email }}</span>{% endif %}
+          {% if internship.contact_phone %}<span style="font-size:0.72rem;color:#94a3b8;">📞 {{ internship.contact_phone }}</span>{% endif %}
+        </div>
+        {% if not internship.id in applied_ids %}
+        <a href="{% url 'apply_internship' internship.pk %}" style="font-size:0.75rem;color:#138808;font-weight:700;text-decoration:none;">Apply Now →</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  {% else %}
+  <div class="empty-state">
+    <div style="font-size:3.5rem;margin-bottom:14px;">💼</div>
+    <p style="font-size:1rem;font-weight:600;color:#475569;margin-bottom:6px;">No internships available right now.</p>
+    <p style="font-size:0.875rem;">Mentors are adding new opportunities — check back soon.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

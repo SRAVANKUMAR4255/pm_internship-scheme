@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block title %}Confirm Application — PM Internship Scheme{% endblock %}
+
+{% block nav %}
+<style>
+  .student-nav-link{display:inline-flex;align-items:center;padding:8px 14px;font-size:0.8rem;font-weight:500;color:#64748b;white-space:nowrap;border-bottom:2px solid transparent;transition:all 0.18s ease;text-decoration:none;}
+  .student-nav-link:hover{color:#1a3a6b;background:#f8fafc;}
+  .student-nav-link.active{color:#1a3a6b;font-weight:700;border-bottom-color:#FF9933;background:#FFF3E0;}
+</style>
+<nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="flex items-center justify-between h-12">
+      <div class="flex overflow-x-auto">
+        <a href="{% url 'student_dashboard' %}" class="student-nav-link">Dashboard</a>
+        <a href="{% url 'view_internships' %}" class="student-nav-link active">Internships</a>
+        <a href="{% url 'application_status' %}" class="student-nav-link">Applications</a>
+      </div>
+      <div class="flex items-center gap-3 ml-3 flex-shrink-0">
+        <div style="width:28px;height:28px;border-radius:50%;background:#1a3a6b;color:#fff;font-size:0.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ request.user.full_name|first|upper }}</div>
+        <a href="{% url 'student_logout' %}" class="px-3 py-1.5 text-xs font-bold text-red-600 border border-red-200 rounded-lg hover:bg-red-600 hover:text-white transition-all">Logout</a>
+      </div>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<style>
+  .page-wrapper{max-width:600px;margin:0 auto;padding:32px 16px;}
+  .confirm-card{background:#fff;border-radius:20px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06),0 12px 40px rgba(26,58,107,0.09);}
+  .confirm-header{background:linear-gradient(145deg,#0f2952 0%,#1a3a6b 55%,#1e4a80 100%);padding:24px 28px;position:relative;overflow:hidden;}
+  .confirm-header::before{content:'';position:absolute;top:-30px;right:-20px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(255,153,51,0.12) 0%,transparent 70%);}
+  .tricolor-strip{height:3px;background:linear-gradient(90deg,#FF9933 33.33%,#fff 33.33%,#fff 66.66%,#138808 66.66%);}
+  .confirm-body{padding:24px 28px;}
+
+  .detail-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #f8fafc;}
+  .detail-row:last-child{border-bottom:none;}
+  .detail-label{font-size:0.68rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#94a3b8;min-width:90px;flex-shrink:0;padding-top:1px;}
+  .detail-value{font-size:0.875rem;color:#334155;font-weight:500;}
+
+  .btn-cancel{flex:1;text-align:center;display:block;background:#f8fafc;border:1.5px solid #e2e8f0;color:#64748b;font-weight:700;font-size:0.875rem;padding:13px;border-radius:12px;text-decoration:none;transition:all 0.2s;}
+  .btn-cancel:hover{background:#e2e8f0;}
+  .btn-confirm{flex:1;text-align:center;display:block;background:linear-gradient(135deg,#138808,#0a5c06);color:#fff;font-weight:700;font-size:0.875rem;padding:13px;border-radius:12px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(19,136,8,0.3);transition:all 0.22s;font-family:'DM Sans',sans-serif;}
+  .btn-confirm:hover{box-shadow:0 6px 20px rgba(19,136,8,0.4);transform:translateY(-1px);}
+</style>
+
+<div class="page-wrapper">
+
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:20px;">
+    <a href="{% url 'view_internships' %}" style="font-size:0.75rem;color:#1a3a6b;text-decoration:none;">← Internships</a>
+    <span style="font-size:0.75rem;color:#94a3b8;">/</span>
+    <span style="font-size:0.75rem;color:#475569;font-weight:500;">Confirm Application</span>
+  </div>
+
+  <div class="confirm-card">
+    <div class="confirm-header">
+      <div style="position:relative;z-index:1;display:flex;align-items:center;gap:14px;">
+        <div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;">📝</div>
+        <div>
+          <h2 style="font-family:'DM Serif Display',serif;font-size:1.25rem;color:#fff;margin:0 0 4px;">Confirm Application</h2>
+          <p style="font-size:0.7rem;color:rgba(147,197,253,0.8);text-transform:uppercase;letter-spacing:0.07em;margin:0;">Review details before submitting</p>
+        </div>
+      </div>
+    </div>
+    <div class="tricolor-strip"></div>
+
+    <div class="confirm-body">
+
+      <!-- Internship detail summary -->
+      <div style="background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;padding:16px;margin-bottom:20px;">
+        <h3 style="font-family:'DM Serif Display',serif;font-size:1rem;color:#1a3a6b;margin:0 0 12px;">{{ internship.title }}</h3>
+        <div>
+          <div class="detail-row"><span class="detail-label">Company</span><span class="detail-value">{{ internship.company_name }}</span></div>
+          <div class="detail-row"><span class="detail-label">Location</span><span class="detail-value">{{ internship.location }} · {{ internship.get_mode_display }}</span></div>
+          <div class="detail-row"><span class="detail-label">Stipend</span><span class="detail-value">₹{{ internship.stipend_amount }}/month</span></div>
+          <div class="detail-row"><span class="detail-label">Duration</span><span class="detail-value">{{ internship.get_duration_display }}</span></div>
+          <div class="detail-row"><span class="detail-label">Mentor</span><span class="detail-value">{{ internship.mentor.full_name }}</span></div>
+          {% if internship.last_date_to_apply %}
+          <div class="detail-row"><span class="detail-label">Deadline</span><span class="detail-value" style="color:#dc2626;font-weight:700;">{{ internship.last_date_to_apply|date:"d M Y" }}</span></div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Applicant info -->
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px 16px;margin-bottom:22px;">
+        <p style="font-size:0.65rem;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:0.07em;margin:0 0 5px;">Applying As</p>
+        <p style="font-weight:700;color:#1e293b;font-size:0.9rem;margin:0 0 2px;">{{ request.user.full_name }}</p>
+        <p style="font-size:0.75rem;color:#64748b;margin:0;">{{ request.user.email }}</p>
+      </div>
+
+      <p style="font-size:0.8rem;color:#94a3b8;margin:0 0 18px;text-align:center;">Your application will be sent to the mentor as <strong>Pending</strong> and reviewed shortly.</p>
+
+      <form method="POST" action="{% url 'apply_internship' internship.pk %}">
+        {% csrf_token %}
+        <div style="display:flex;gap:12px;">
+          <a href="{% url 'view_internships' %}" class="btn-cancel">Cancel</a>
+          <button type="submit" class="btn-confirm">✓ Submit Application</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

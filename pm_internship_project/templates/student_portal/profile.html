@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}My Profile{% endblock %}
+{% block nav %}
+<nav class="bg-white border-b-2 border-saffron shadow-sm">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="flex items-center justify-between h-12">
+            
+            <!-- Left Side Navigation Links -->
+            <div class="flex space-x-1 text-sm font-medium">
+                <a href="{% url 'student_dashboard' %}" 
+                   class="px-4 py-2 text-navy-blue hover:bg-light-saffron hover:border-b-2 hover:border-saffron transition">
+                    Dashboard
+                </a>
+                <a href="{% url 'prediction' %}" 
+                   class="px-4 py-2 text-navy-blue hover:bg-light-saffron hover:border-b-2 hover:border-saffron transition">
+                    Prediction
+                </a>
+
+                <a href="{% url 'view_internships' %}" 
+                   class="px-4 py-2 text-navy-blue hover:bg-light-saffron hover:border-b-2 hover:border-saffron transition">
+                    Internships
+                </a>
+
+                <a href="{% url 'application_status' %}" 
+                   class="px-4 py-2 text-navy-blue hover:bg-light-saffron hover:border-b-2 hover:border-saffron transition">
+                    Applications
+                </a>
+
+                <a href="{% url 'learn_classes' %}" 
+                   class="px-4 py-2 text-navy-blue hover:bg-light-saffron hover:border-b-2 hover:border-saffron transition">
+                    Classes
+                </a>
+
+                <a href="{% url 'my_profile' %}" 
+                   class="px-4 py-2 text-navy-blue hover:bg-light-saffron hover:border-b-2 hover:border-saffron transition">
+                    My Profile
+                </a>
+
+                <a href="{% url 'submit_feedback' %}" 
+                   class="px-4 py-2 text-navy-blue hover:bg-light-saffron hover:border-b-2 hover:border-saffron transition">
+                    Feedback
+                </a>
+
+            </div>
+
+            <!-- Right Side User Section -->
+            <div class="flex items-center space-x-3">
+                <span class="text-xs text-gray-600">
+                    👋 {{ request.user.full_name }}
+                </span>
+
+                <a href="{% url 'student_logout' %}" 
+                   class="px-4 py-1.5 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 transition">
+                    Logout
+                </a>
+            </div>
+
+        </div>
+    </div>
+</nav>
+{% endblock %}
+{% block content %}
+<div class="flex items-center gap-2 mb-5">
+  <a href="{% url 'student_dashboard' %}" class="text-navy hover:underline text-xs">← Dashboard</a>
+  <span class="text-gray-400 text-xs">/</span>
+  <span class="text-gray-600 text-xs">My Profile</span>
+</div>
+
+<div class="max-w-lg">
+  <div class="bg-white rounded-xl border border-gray-200 shadow overflow-hidden">
+    <div class="bg-navy px-5 py-4">
+      <h2 class="text-white font-bold text-base">My Profile</h2>
+    </div>
+    <div class="p-5">
+      <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+        <p class="text-xs text-gray-500 uppercase">Email</p>
+        <p class="font-semibold text-gray-800">{{ request.user.email }}</p>
+      </div>
+      <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+        <p class="text-xs text-gray-500 uppercase">Role</p>
+        <span class="bg-saffron text-white text-xs font-bold px-2 py-0.5 rounded-full">Student</span>
+      </div>
+      <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+        <p class="text-xs text-gray-500 uppercase">Member Since</p>
+        <p class="font-semibold text-gray-800">{{ request.user.date_joined|date:"d M Y" }}</p>
+      </div>
+
+      <hr class="my-4">
+      <h3 class="font-semibold text-navy mb-3 text-sm">Update Name</h3>
+      <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="block text-xs font-semibold text-gray-600 mb-1 uppercase">Full Name</label>
+          <input type="text" name="full_name" value="{{ request.user.full_name }}" required
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-navy text-sm">
+        </div>
+        <button type="submit" class="bg-navy text-white font-semibold px-5 py-2 rounded-lg hover:bg-blue-800 transition text-sm">Update Profile</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,495 @@
+{% extends 'base.html' %}
+{% block title %}Resume Career Prediction{% endblock %}
+
+{% block nav %}
+<nav class="bg-white border-b-2 border-saffron shadow-sm">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="flex items-center justify-between h-12">
+      <div class="flex space-x-1 text-sm font-medium overflow-x-auto">
+        <a href="{% url 'student_dashboard' %}" class="px-4 py-2 text-navy-blue hover:bg-light-saffron hover:border-b-2 hover:border-saffron transition whitespace-nowrap">Dashboard</a>
+        <a href="{% url 'prediction' %}" class="px-4 py-2 text-white bg-navy-blue border-b-2 border-saffron whitespace-nowrap">Prediction</a>
+        <a href="{% url 'my_predictions' %}" class="px-4 py-2 text-navy-blue hover:bg-light-saffron hover:border-b-2 hover:border-saffron transition whitespace-nowrap">My Predictions</a>
+        <a href="{% url 'view_internships' %}" class="px-4 py-2 text-navy-blue hover:bg-light-saffron hover:border-b-2 hover:border-saffron transition whitespace-nowrap">Internships</a>
+        <a href="{% url 'application_status' %}" class="px-4 py-2 text-navy-blue hover:bg-light-saffron hover:border-b-2 hover:border-saffron transition whitespace-nowrap">Applications</a>
+        <a href="{% url 'learn_classes' %}" class="px-4 py-2 text-navy-blue hover:bg-light-saffron hover:border-b-2 hover:border-saffron transition whitespace-nowrap">Classes</a>
+        <a href="{% url 'my_profile' %}" class="px-4 py-2 text-navy-blue hover:bg-light-saffron hover:border-b-2 hover:border-saffron transition whitespace-nowrap">My Profile</a>
+        <a href="{% url 'submit_feedback' %}" class="px-4 py-2 text-navy-blue hover:bg-light-saffron hover:border-b-2 hover:border-saffron transition whitespace-nowrap">Feedback</a>
+      </div>
+      <div class="flex items-center space-x-3 ml-3 flex-shrink-0">
+        <span class="text-xs text-gray-600 hidden md:block">👋 {{ request.user.full_name }}</span>
+        <a href="{% url 'student_logout' %}" class="px-4 py-1.5 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 transition">Logout</a>
+      </div>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+
+<div class="mb-5">
+  <div class="flex items-center gap-2 mb-1">
+    <a href="{% url 'student_dashboard' %}" class="text-navy-blue hover:underline text-xs">← Dashboard</a>
+    <span class="text-gray-400 text-xs">/</span>
+    <span class="text-gray-600 text-xs font-medium">Resume Career Prediction</span>
+  </div>
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <h2 class="text-xl font-bold text-navy-blue">🔮 Resume Career Prediction</h2>
+    <a href="{% url 'my_predictions' %}" class="text-xs font-semibold text-saffron border border-saffron px-3 py-1.5 rounded-lg hover:bg-light-saffron transition">
+      📋 My Prediction History →
+    </a>
+  </div>
+</div>
+
+{% if not ml_available %}
+<div class="bg-yellow-50 border border-yellow-300 rounded-xl p-4 mb-5 flex items-start gap-3">
+  <span class="text-xl flex-shrink-0">⚠️</span>
+  <div class="text-xs">
+    <p class="font-bold text-yellow-800 text-sm mb-1">ML Models Not Found — Running Keyword Fallback</p>
+    <p class="text-yellow-700">
+      Place <code class="bg-yellow-100 px-1 rounded font-mono">best_model.pkl</code>,
+      <code class="bg-yellow-100 px-1 rounded font-mono">tfidf_vectorizer.pkl</code>,
+      <code class="bg-yellow-100 px-1 rounded font-mono">label_encoder.pkl</code>,
+      <code class="bg-yellow-100 px-1 rounded font-mono">df_jobs.pkl</code>
+      inside <code class="bg-yellow-100 px-1 rounded font-mono">saved_models/</code> for full ML predictions.
+    </p>
+  </div>
+</div>
+{% endif %}
+
+{% if not result %}
+<!-- ═══════════════════ UPLOAD FORM ═══════════════════ -->
+<div class="max-w-2xl">
+  <div class="bg-white rounded-xl border border-gray-200 shadow overflow-hidden">
+    <div class="bg-gradient-to-r from-navy-blue to-blue-800 px-6 py-5">
+      <h3 class="text-white font-bold text-base">📄 Upload Resume PDF</h3>
+      <p class="text-blue-300 text-xs mt-0.5">Get ML-powered career prediction + matching internships</p>
+    </div>
+    <div class="p-6">
+      <form method="POST" enctype="multipart/form-data" id="uploadForm">
+        {% csrf_token %}
+        <div id="dropZone"
+          class="border-2 border-dashed border-gray-300 rounded-xl p-10 text-center cursor-pointer hover:border-saffron hover:bg-orange-50 transition mb-5"
+          onclick="document.getElementById('resumeInput').click()">
+          <div class="text-5xl mb-3" id="dropIcon">📄</div>
+          <p class="font-semibold text-gray-700 text-sm" id="dropText">Click or drag & drop your Resume PDF</p>
+          <p class="text-xs text-gray-400 mt-1">PDF only · Max 5 MB</p>
+          <input type="file" id="resumeInput" name="resume_pdf" accept=".pdf" class="hidden" onchange="handleFile(this)">
+        </div>
+        <div id="fileInfo" class="hidden mb-5 bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-3">
+          <span class="text-2xl">📋</span>
+          <div class="flex-1">
+            <p class="font-semibold text-green-800 text-sm" id="fileName"></p>
+            <p class="text-green-600 text-xs" id="fileSize"></p>
+          </div>
+          <button type="button" onclick="clearFile()" class="text-red-400 hover:text-red-600 text-xs font-semibold">✕ Remove</button>
+        </div>
+        <div class="bg-gray-50 rounded-lg p-4 mb-5 text-xs text-gray-600 space-y-1.5">
+          <p class="font-semibold text-sm text-gray-700 mb-2">What you'll get:</p>
+          <p>✦ PDF text extracted → cleaned → {{ ml_available|yesno:"ML model,keyword" }} prediction</p>
+          <p>✦ Predicted career category with <strong>confidence score</strong></p>
+          <p>✦ <strong>Top 3 category predictions</strong> with visual progress bars</p>
+          <p>✦ <strong>Top 5 matching jobs</strong> from dataset with similarity scores</p>
+          <p>✦ <strong>Live mentor internships</strong> matched to your resume profile</p>
+          <p>✦ Full results saved — downloadable as CSV or JSON</p>
+        </div>
+        <button type="submit" id="submitBtn"
+          class="w-full bg-saffron text-white font-bold py-3 rounded-xl hover:bg-orange-500 transition text-sm shadow-lg">
+          🚀 Analyse Resume & Get Prediction
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<!-- ═══════════════════ RESULTS — NOTEBOOK STYLE ═══════════════════ -->
+
+<div class="space-y-5 max-w-5xl">
+
+  <!-- ── Step 1 Output: File Info Block ───────────────────────────────────── -->
+  <div class="bg-gray-900 rounded-xl overflow-hidden shadow-lg font-mono text-sm">
+    <!-- Terminal Header Bar -->
+    <div class="bg-gray-800 px-4 py-2 flex items-center gap-2">
+      <span class="w-3 h-3 rounded-full bg-red-400 inline-block"></span>
+      <span class="w-3 h-3 rounded-full bg-yellow-400 inline-block"></span>
+      <span class="w-3 h-3 rounded-full bg-green-400 inline-block"></span>
+      <span class="text-gray-400 text-xs ml-2">📓 Resume Extraction Output</span>
+    </div>
+    <div class="p-5 space-y-1.5 text-sm leading-relaxed">
+      <p class="text-blue-300">📄 Reading: <span class="text-white">{{ result.resume_filename }}</span></p>
+      <p class="text-gray-400">&nbsp;</p>
+      <p class="text-green-300">Words extracted (raw)&nbsp;&nbsp;&nbsp;&nbsp;: <span class="text-white font-bold">{{ result.words_raw }}</span></p>
+      <p class="text-green-300">Words after cleaning&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span class="text-white font-bold">{{ result.words_clean }}</span></p>
+      <p class="text-gray-400">&nbsp;</p>
+      <p class="text-yellow-300">Preview (first 200 chars):</p>
+      <p class="text-gray-300 bg-gray-800 rounded p-3 text-xs leading-relaxed break-words">
+        ...{{ result.clean_preview }}...
+      </p>
+    </div>
+  </div>
+
+  <!-- ── Step 2 Output: Prediction Results Block ──────────────────────────── -->
+  <div class="bg-gray-900 rounded-xl overflow-hidden shadow-lg font-mono text-sm">
+    <div class="bg-gray-800 px-4 py-2 flex items-center gap-2">
+      <span class="w-3 h-3 rounded-full bg-red-400 inline-block"></span>
+      <span class="w-3 h-3 rounded-full bg-yellow-400 inline-block"></span>
+      <span class="w-3 h-3 rounded-full bg-green-400 inline-block"></span>
+      <span class="text-gray-400 text-xs ml-2">📋 RESUME PREDICTION RESULTS</span>
+      <!-- Download buttons in header -->
+      <div class="ml-auto flex gap-2">
+        <a href="{% url 'download_prediction' result.prediction_id %}?format=csv"
+          class="text-xs bg-gray-700 hover:bg-gray-600 text-green-300 px-3 py-1 rounded transition font-sans">
+          📥 CSV
+        </a>
+        <a href="{% url 'download_prediction' result.prediction_id %}?format=json"
+          class="text-xs bg-gray-700 hover:bg-gray-600 text-blue-300 px-3 py-1 rounded transition font-sans">
+          📥 JSON
+        </a>
+      </div>
+    </div>
+
+    <div class="p-5 space-y-4">
+      <!-- Separator line -->
+      <p class="text-gray-600">════════════════════════════════════════════════════════════</p>
+
+      <!-- File + Category + Confidence -->
+      <div class="space-y-1.5">
+        <p class="text-gray-300">
+          &nbsp;&nbsp;📄 File&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :
+          <span class="text-white">{{ result.resume_filename }}</span>
+        </p>
+        <p class="text-gray-300">
+          &nbsp;&nbsp;🏷&nbsp; Predicted Category :
+          <span class="text-yellow-300 font-bold text-base"> {{ result.predicted_category }}</span>
+          {% if result.ml_used %}
+          <span class="text-green-400 text-xs ml-2 font-sans">(ML Model)</span>
+          {% else %}
+          <span class="text-orange-400 text-xs ml-2 font-sans">(Keyword Fallback)</span>
+          {% endif %}
+        </p>
+        {% if result.confidence_score %}
+        <p class="text-gray-300">
+          &nbsp;&nbsp;📊 Confidence&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:
+          <span class="text-green-400 font-bold"> {{ result.confidence_score }}%</span>
+        </p>
+        {% endif %}
+      </div>
+
+      <p class="text-gray-400">&nbsp;</p>
+
+      <!-- Top 3 Category Predictions -->
+      {% if result.top3_categories %}
+      <div>
+        <p class="text-white font-bold mb-3">&nbsp;&nbsp;🔝 Top 3 Category Predictions:</p>
+        {% for cat in result.top3_categories %}
+        <div class="flex items-center gap-3 mb-2.5 pl-5">
+          <!-- Rank -->
+          <span class="text-gray-400 text-xs w-4">{{ forloop.counter }}.</span>
+          <!-- Category Name -->
+          <span class="text-cyan-300 font-bold min-w-0" style="min-width:180px;max-width:180px;display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            {{ cat.category }}
+          </span>
+          <!-- Progress Bar (exactly like notebook: █░) -->
+          <div class="flex items-center gap-0.5">
+            {% for i in "12345678901234567890" %}
+            {% with forloop.counter as block_num %}
+            {% if block_num <= cat.bar_filled %}
+            <span class="text-green-400 text-base leading-none">█</span>
+            {% else %}
+            <span class="text-gray-600 text-base leading-none">░</span>
+            {% endif %}
+            {% endwith %}
+            {% endfor %}
+          </div>
+          <!-- Score -->
+          <span class="{% if forloop.first %}text-green-400 font-bold{% else %}text-gray-400{% endif %} text-sm ml-1">
+            {{ cat.score }}%
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <p class="text-gray-400">&nbsp;</p>
+
+      <!-- Top 5 Jobs -->
+      {% if result.top5_jobs %}
+      <div>
+        <p class="text-white font-bold mb-3">&nbsp;&nbsp;💼 Top 5 Matching Jobs:</p>
+        <p class="text-gray-600 pl-2">────────────────────────────────────────────────────────────</p>
+
+        <!-- Table Header -->
+        <div class="overflow-x-auto mt-2">
+          <table class="w-full text-xs font-mono">
+            <thead>
+              <tr class="text-gray-400 border-b border-gray-700">
+                <th class="text-right pr-4 py-2 font-normal whitespace-nowrap">rank</th>
+                <th class="text-left pr-4 py-2 font-normal whitespace-nowrap">job_id</th>
+                <th class="text-left pr-4 py-2 font-normal">job_title</th>
+                <th class="text-left pr-4 py-2 font-normal whitespace-nowrap">category</th>
+                <th class="text-left pr-4 py-2 font-normal whitespace-nowrap">location</th>
+                <th class="text-right py-2 font-normal whitespace-nowrap">similarity_score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for job in result.top5_jobs %}
+              <tr class="border-b border-gray-800 hover:bg-gray-800 transition">
+                <td class="text-right pr-4 py-2.5 text-gray-400">{{ job.rank }}</td>
+                <td class="pr-4 py-2.5 text-gray-500">{{ job.job_id }}</td>
+                <td class="pr-4 py-2.5 text-white font-medium max-w-xs">
+                  <span class="block truncate" title="{{ job.job_title }}" style="max-width:280px;">
+                    {{ job.job_title }}
+                  </span>
+                </td>
+                <td class="pr-4 py-2.5">
+                  <span class="{% if job.category == result.predicted_category %}text-yellow-300 font-bold{% else %}text-blue-300{% endif %}">
+                    {{ job.category }}
+                  </span>
+                </td>
+                <td class="pr-4 py-2.5 text-green-300">{{ job.location }}</td>
+                <td class="text-right py-2.5">
+                  <span class="text-cyan-400 font-bold">{{ job.similarity_score }}</span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <p class="text-gray-600 mt-2">════════════════════════════════════════════════════════════</p>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+  <!-- ── Step 3 Output: Visual Charts (HTML Bar Charts) ───────────────────── -->
+  {% if result.top3_categories or result.top5_jobs %}
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="bg-gray-50 border-b border-gray-200 px-5 py-3 flex items-center justify-between">
+      <h4 class="font-bold text-navy-blue text-sm">📊 Visual Analysis — Resume: {{ result.resume_filename }}</h4>
+      <a href="{% url 'prediction_detail' result.prediction_id %}" class="text-xs text-saffron font-semibold hover:underline">
+        Full Detail View →
+      </a>
+    </div>
+    <div class="p-5 grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- Left: Top Category Confidence Bars -->
+      {% if result.top3_categories %}
+      <div>
+        <h5 class="font-bold text-sm text-gray-700 mb-4 text-center">Top 3 Category Predictions</h5>
+        <div class="space-y-4">
+          {% for cat in result.top3_categories %}
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="font-bold text-sm
+                {% if forloop.first %}text-navy-blue
+                {% elif forloop.counter == 2 %}text-orange-600
+                {% else %}text-red-500{% endif %}">
+                {{ cat.category }}
+              </span>
+              <span class="font-bold text-sm
+                {% if forloop.first %}text-green-600
+                {% elif forloop.counter == 2 %}text-orange-500
+                {% else %}text-red-400{% endif %}">
+                {{ cat.score }}%
+              </span>
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-8 relative overflow-hidden">
+              <div class="h-full rounded-full flex items-center justify-end pr-3 transition-all
+                {% if forloop.first %}bg-green-500
+                {% elif forloop.counter == 2 %}bg-orange-400
+                {% else %}bg-red-400{% endif %}"
+                style="width: min({{ cat.score }}%, 100%)">
+                <span class="text-white text-xs font-bold">{{ cat.score }}%</span>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <!-- Vertical dashed line for top score marker (visual only) -->
+        {% if result.top3_categories %}
+        <div class="mt-3 pt-3 border-t border-gray-100 flex items-center gap-2">
+          <span class="w-3 h-0.5 bg-green-400 inline-block"></span>
+          <span class="text-xs text-gray-400">Best match: <strong class="text-navy-blue">{{ result.top3_categories.0.category }}</strong></span>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Right: Top 5 Job Similarity Scores -->
+      {% if result.top5_jobs %}
+      <div>
+        <h5 class="font-bold text-sm text-gray-700 mb-4 text-center">Top 5 Matching Jobs</h5>
+        <div class="space-y-3">
+          {% for job in result.top5_jobs %}
+          {% with max_score=result.top5_jobs.0.similarity_score %}
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs text-gray-700 font-medium truncate max-w-xs" title="{{ job.job_title }}">
+                <span class="text-gray-400 mr-1">{{ job.rank }}.</span>{{ job.job_title|truncatechars:30 }}
+              </span>
+              <span class="text-xs font-bold text-blue-700 ml-2 flex-shrink-0">{{ job.similarity_score }}</span>
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-5 relative overflow-hidden">
+              {% widthratio job.similarity_score max_score 100 as bar_pct %}
+              <div class="h-full rounded-full flex items-center justify-end pr-2 transition-all"
+                style="width: {{ bar_pct }}%;
+                  background: linear-gradient(90deg,
+                    {% if forloop.first %}#1a3a6b, #2563eb
+                    {% elif forloop.counter == 2 %}#1a4a7b, #3b82f6
+                    {% else %}#3b5f8a, #60a5fa{% endif %});">
+                <span class="text-white text-xs font-semibold">{{ job.similarity_score }}</span>
+              </div>
+            </div>
+            <p class="text-xs text-gray-400 mt-0.5">{{ job.category }} · {{ job.location }}</p>
+          </div>
+          {% endwith %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Step 4: Matched Mentor Internships ───────────────────────────────── -->
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="bg-gradient-to-r from-india-green to-green-600 px-5 py-4">
+      <h4 class="font-bold text-white text-sm">🏛️ Matched Mentor Internships (Live)</h4>
+      <p class="text-green-200 text-xs mt-0.5">
+        Internships from the portal that match your resume profile — apply directly
+      </p>
+    </div>
+
+    {% if result.matched_internships %}
+    <div class="divide-y divide-gray-100">
+      {% for intern in result.matched_internships %}
+      <div class="p-5">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <div class="flex-1">
+            <div class="flex items-center gap-2 flex-wrap mb-1">
+              <h5 class="font-bold text-navy-blue text-sm">{{ intern.title }}</h5>
+              <!-- Match score badge -->
+              <span class="text-xs font-bold px-2.5 py-0.5 rounded-full
+                {% if intern.match_score >= 70 %}bg-green-100 text-green-700
+                {% elif intern.match_score >= 40 %}bg-yellow-100 text-yellow-700
+                {% else %}bg-blue-100 text-blue-700{% endif %}">
+                {{ intern.match_score }}% Match
+              </span>
+            </div>
+            <p class="text-gray-600 text-sm font-semibold">{{ intern.company_name }}</p>
+            <div class="flex flex-wrap gap-3 mt-1.5 text-xs text-gray-500">
+              <span>🏭 {{ intern.sector }}</span>
+              <span>📍 {{ intern.location }}</span>
+              <span>🏢 {{ intern.mode }}</span>
+              <span>💰 ₹{{ intern.stipend_amount }}/mo</span>
+              <span>⏱ {{ intern.duration }}</span>
+              <span>👨‍💼 {{ intern.mentor_name }}</span>
+            </div>
+            {% if intern.match_reasons %}
+            <div class="mt-2 flex flex-wrap gap-1.5">
+              {% for reason in intern.match_reasons %}
+              <span class="bg-green-50 border border-green-200 text-green-700 text-xs px-2 py-0.5 rounded-full">
+                ✓ {{ reason }}
+              </span>
+              {% endfor %}
+            </div>
+            {% endif %}
+            {% if intern.skills_required %}
+            <div class="mt-2 flex flex-wrap gap-1">
+              {% for skill in intern.skills_required.split(',') %}
+              <span class="bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full border border-blue-100">
+                {{ skill|truncatechars:20 }}
+              </span>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          <!-- Apply Button -->
+          <div class="flex-shrink-0 text-center min-w-max">
+            {% if intern.id in result.applied_ids %}
+            <span class="block bg-gray-100 text-gray-500 text-xs font-bold px-5 py-2.5 rounded-lg border border-gray-200 mb-1">
+              ✓ Applied
+            </span>
+            <a href="{% url 'application_status' %}" class="text-xs text-navy-blue hover:underline">
+              Check status →
+            </a>
+            {% else %}
+            <a href="{% url 'apply_from_prediction' intern.id result.prediction_id %}"
+              class="block bg-india-green text-white text-sm font-bold px-5 py-2.5 rounded-lg hover:bg-green-700 transition shadow-sm text-center mb-1">
+              Apply Now
+            </a>
+            <p class="text-xs text-gray-400">Sent to {{ intern.mentor_name }}</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="px-5 py-10 text-center text-gray-400">
+      <div class="text-4xl mb-3">🔍</div>
+      <p class="font-semibold text-sm mb-1">No closely matching internships found in the portal.</p>
+      <p class="text-xs mb-4">Your predicted category (<strong>{{ result.predicted_category }}</strong>) may not match current active internships.</p>
+      <a href="{% url 'view_internships' %}" class="inline-block bg-navy-blue text-white text-xs font-bold px-5 py-2 rounded-lg hover:bg-blue-800 transition">
+        Browse All Internships →
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Actions Row -->
+  <div class="flex gap-3">
+    <a href="{% url 'prediction' %}" class="flex-1 text-center bg-white border-2 border-navy-blue text-navy-blue font-bold py-3 rounded-xl hover:bg-navy-blue hover:text-white transition text-sm">
+      ↑ Upload Another Resume
+    </a>
+    <a href="{% url 'my_predictions' %}" class="flex-1 text-center bg-saffron text-white font-bold py-3 rounded-xl hover:bg-orange-500 transition text-sm shadow">
+      📋 View All My Predictions
+    </a>
+  </div>
+
+</div>
+{% endif %}
+
+<script>
+function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('dropIcon').textContent = '✅';
+  document.getElementById('dropText').textContent = file.name + ' — ready to upload';
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
+  document.getElementById('fileInfo').classList.remove('hidden');
+}
+function clearFile() {
+  document.getElementById('resumeInput').value = '';
+  document.getElementById('dropIcon').textContent = '📄';
+  document.getElementById('dropText').textContent = 'Click or drag & drop your Resume PDF';
+  document.getElementById('fileInfo').classList.add('hidden');
+}
+document.getElementById('uploadForm')?.addEventListener('submit', function () {
+  const btn = document.getElementById('submitBtn');
+  btn.textContent = '⏳ Analysing Resume... Please wait...';
+  btn.disabled = true;
+  btn.classList.add('opacity-75', 'cursor-not-allowed');
+});
+const dz = document.getElementById('dropZone');
+if (dz) {
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('border-saffron', 'bg-orange-50'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('border-saffron', 'bg-orange-50'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault();
+    const f = e.dataTransfer.files[0];
+    if (f && f.name.endsWith('.pdf')) {
+      const inp = document.getElementById('resumeInput');
+      const dt = new DataTransfer();
+      dt.items.add(f);
+      inp.files = dt.files;
+      handleFile(inp);
+    }
+  });
+}
+</script>
+{% endblock %}

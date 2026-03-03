@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+{% block title %}Submit Feedback — PM Internship Scheme{% endblock %}
+
+{% block nav %}
+<style>
+  .student-nav-link{display:inline-flex;align-items:center;padding:8px 14px;font-size:0.8rem;font-weight:500;color:#64748b;white-space:nowrap;border-bottom:2px solid transparent;transition:all 0.18s ease;text-decoration:none;}
+  .student-nav-link:hover{color:#1a3a6b;background:#f8fafc;}
+  .student-nav-link.active{color:#1a3a6b;font-weight:700;border-bottom-color:#FF9933;background:#FFF3E0;}
+</style>
+<nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="flex items-center justify-between h-12">
+      <div class="flex overflow-x-auto">
+        <a href="{% url 'student_dashboard' %}" class="student-nav-link">Dashboard</a>
+        <a href="{% url 'prediction' %}" class="student-nav-link">Prediction</a>
+        <a href="{% url 'view_internships' %}" class="student-nav-link">Internships</a>
+        <a href="{% url 'application_status' %}" class="student-nav-link">Applications</a>
+        <a href="{% url 'learn_classes' %}" class="student-nav-link">Classes</a>
+        <a href="{% url 'my_profile' %}" class="student-nav-link">Profile</a>
+        <a href="{% url 'submit_feedback' %}" class="student-nav-link active">Feedback</a>
+      </div>
+      <div class="flex items-center gap-3 ml-3 flex-shrink-0">
+        <div class="hidden md:flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full bg-navy-blue text-white text-xs font-bold flex items-center justify-center">{{ request.user.full_name|first|upper }}</div>
+          <span class="text-xs text-gray-600 font-medium">{{ request.user.full_name }}</span>
+        </div>
+        <a href="{% url 'student_logout' %}" class="px-3 py-1.5 text-xs font-bold text-red-600 border border-red-200 rounded-lg hover:bg-red-600 hover:text-white transition-all">Logout</a>
+      </div>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<style>
+  .fb-wrapper {
+    min-height:calc(100vh - 140px);
+    display:flex; align-items:center; justify-content:center;
+    padding:40px 16px;
+    background:#f1f5f9;
+    background-image:
+      radial-gradient(circle at 15% 30%, rgba(255,153,51,0.07) 0%, transparent 50%),
+      radial-gradient(circle at 85% 70%, rgba(26,58,107,0.05) 0%, transparent 50%);
+  }
+  .fb-card {
+    width:100%; max-width:560px;
+    background:#fff; border-radius:20px; overflow:hidden;
+    box-shadow:0 0 0 1px rgba(26,58,107,0.06),0 20px 60px -10px rgba(26,58,107,0.12);
+    animation:slideUp 0.4s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  @keyframes slideUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
+
+  .fb-header {
+    background:linear-gradient(145deg,#0f2952 0%,#1a3a6b 55%,#1e4a80 100%);
+    padding:28px 32px; position:relative; overflow:hidden;
+  }
+  .fb-header::before{content:'';position:absolute;top:-40px;right:-40px;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle,rgba(255,153,51,0.18) 0%,transparent 70%);}
+  .fb-header::after{content:'';position:absolute;bottom:-30px;left:-20px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.04) 0%,transparent 70%);}
+  .tricolor-strip{height:3px;background:linear-gradient(90deg,#FF9933 33.33%,#fff 33.33%,#fff 66.66%,#138808 66.66%);}
+
+  .fb-body{padding:28px 32px 32px;}
+  .field-label{display:block;font-size:0.7rem;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:#475569;margin-bottom:6px;}
+  .field-input{width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:11px 16px;font-size:0.875rem;color:#1e293b;background:#f8fafc;transition:all 0.2s;outline:none;box-sizing:border-box;font-family:'DM Sans',sans-serif;}
+  .field-input:focus{border-color:#1a3a6b;background:#fff;box-shadow:0 0 0 3px rgba(26,58,107,0.09);}
+  .field-input::placeholder{color:#94a3b8;}
+
+  /* Rating stars */
+  .rating-group{display:flex;gap:6px;margin-bottom:20px;}
+  .star-btn{
+    font-size:1.4rem;cursor:pointer;
+    transition:transform 0.15s;
+    background:none;border:none;padding:2px;
+    filter:grayscale(1) opacity(0.4);
+  }
+  .star-btn:hover,.star-btn.selected{filter:grayscale(0) opacity(1);transform:scale(1.15);}
+  .star-btn.selected{transform:scale(1.1);}
+
+  .btn-submit{
+    width:100%;
+    background:linear-gradient(135deg,#FF9933 0%,#e8851f 100%);
+    color:#fff;font-family:'DM Sans',sans-serif;
+    font-size:0.875rem;font-weight:700;
+    padding:13px 20px;border-radius:10px;border:none;
+    cursor:pointer;margin-top:6px;
+    box-shadow:0 4px 14px rgba(255,153,51,0.35);
+    transition:all 0.22s ease;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .btn-submit:hover{background:linear-gradient(135deg,#e8851f 0%,#d4750f 100%);box-shadow:0 6px 20px rgba(255,153,51,0.45);transform:translateY(-1px);}
+  .btn-submit:active{transform:translateY(0);}
+
+  /* Info tiles */
+  .info-tiles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:22px;}
+  .info-tile{background:#f8fafc;border-radius:10px;padding:12px;text-align:center;border:1px solid #e2e8f0;}
+  .info-tile-icon{font-size:1.2rem;margin-bottom:4px;}
+  .info-tile-label{font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;}
+</style>
+
+<div class="fb-wrapper">
+  <div style="width:100%;max-width:560px;">
+
+    <!-- Breadcrumb -->
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;">
+      <a href="{% url 'student_dashboard' %}" style="font-size:0.75rem;color:#1a3a6b;text-decoration:none;font-weight:500;">← Dashboard</a>
+      <span style="font-size:0.75rem;color:#94a3b8;">/</span>
+      <span style="font-size:0.75rem;color:#475569;font-weight:500;">Submit Feedback</span>
+    </div>
+
+    <div class="fb-card">
+      <!-- Header -->
+      <div class="fb-header">
+        <div style="position:relative;z-index:1;">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.08);border:2px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;backdrop-filter:blur(4px);">💬</div>
+            <div>
+              <h2 style="font-family:'DM Serif Display',serif;font-size:1.3rem;color:#fff;margin:0 0 3px;">Submit Feedback</h2>
+              <p style="font-size:0.7rem;color:rgba(180,200,230,0.8);text-transform:uppercase;letter-spacing:0.08em;margin:0;">PM Internship Scheme Portal</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tricolor-strip"></div>
+
+      <!-- Body -->
+      <div class="fb-body">
+
+        <!-- Info tiles -->
+        <div class="info-tiles">
+          <div class="info-tile">
+            <div class="info-tile-icon">🔒</div>
+            <div class="info-tile-label">Confidential</div>
+          </div>
+          <div class="info-tile">
+            <div class="info-tile-icon">📊</div>
+            <div class="info-tile-label">Reviewed by MCA</div>
+          </div>
+          <div class="info-tile">
+            <div class="info-tile-icon">🎯</div>
+            <div class="info-tile-label">Helps Improve</div>
+          </div>
+        </div>
+
+        <form method="POST" novalidate>
+          {% csrf_token %}
+
+          <!-- Star Rating (optional UI, no backend binding by default) -->
+          <div style="margin-bottom:20px;">
+            <label class="field-label">Rate Your Experience</label>
+            <div class="rating-group" id="stars">
+              <button type="button" class="star-btn" data-val="1">⭐</button>
+              <button type="button" class="star-btn" data-val="2">⭐</button>
+              <button type="button" class="star-btn" data-val="3">⭐</button>
+              <button type="button" class="star-btn" data-val="4">⭐</button>
+              <button type="button" class="star-btn" data-val="5">⭐</button>
+            </div>
+            <input type="hidden" name="rating" id="rating-val">
+          </div>
+
+          <!-- Category -->
+          <div style="margin-bottom:18px;">
+            <label class="field-label" for="category">Feedback Category</label>
+            <select id="category" name="category" class="field-input" style="cursor:pointer;">
+              <option value="">— Select a category —</option>
+              <option value="internship">Internship Experience</option>
+              <option value="mentor">Mentor Support</option>
+              <option value="portal">Portal Usability</option>
+              <option value="classes">Learning Classes</option>
+              <option value="scheme">Scheme Benefits</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <!-- Feedback text -->
+          <div style="margin-bottom:22px;">
+            <label class="field-label" for="message">Your Feedback *</label>
+            <textarea
+              class="field-input"
+              id="message" name="message" rows="5" required
+              placeholder="Share your experience, suggestions, or any issues you'd like to report..."
+              style="resize:none;line-height:1.7;"></textarea>
+            <p style="font-size:0.68rem;color:#94a3b8;margin-top:5px;text-align:right;" id="char-count">0 / 500 characters</p>
+          </div>
+
+          <button type="submit" class="btn-submit">
+            <span>Submit Feedback</span>
+            <span>→</span>
+          </button>
+        </form>
+
+        <p style="text-align:center;font-size:0.72rem;color:#94a3b8;margin-top:18px;line-height:1.6;">
+          Your feedback helps the Government of India improve the PM Internship Scheme for future interns.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Star rating
+  const stars = document.querySelectorAll('.star-btn');
+  const ratingInput = document.getElementById('rating-val');
+  stars.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const val = parseInt(btn.dataset.val);
+      ratingInput.value = val;
+      stars.forEach((s, i) => s.classList.toggle('selected', i < val));
+    });
+  });
+
+  // Char counter
+  const ta = document.getElementById('message');
+  const cc = document.getElementById('char-count');
+  if (ta && cc) {
+    ta.addEventListener('input', () => {
+      const len = ta.value.length;
+      cc.textContent = len + ' / 500 characters';
+      cc.style.color = len > 450 ? '#dc2626' : '#94a3b8';
+    });
+  }
+</script>
+
+{% endblock %}

@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% block title %}My Applications — PM Internship Scheme{% endblock %}
+
+{% block nav %}
+<style>
+.student-nav-link{
+  display:inline-flex;
+  align-items:center;
+  padding:8px 14px;
+  font-size:0.8rem;
+  font-weight:500;
+  color:#64748b;
+  border-bottom:2px solid transparent;
+  text-decoration:none;
+}
+.student-nav-link:hover{color:#1a3a6b;background:#f8fafc;}
+.student-nav-link.active{
+  color:#1a3a6b;
+  font-weight:700;
+  border-bottom-color:#FF9933;
+  background:#FFF3E0;
+}
+</style>
+
+<nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="flex items-center justify-between h-12">
+
+      <div class="flex overflow-x-auto">
+        <a href="{% url 'student_dashboard' %}" class="student-nav-link">Dashboard</a>
+        <a href="{% url 'view_internships' %}" class="student-nav-link">Internships</a>
+        <a href="{% url 'application_status' %}" class="student-nav-link active">Applications</a>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div style="width:28px;height:28px;border-radius:50%;background:#1a3a6b;color:#fff;
+        font-size:0.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;">
+          {{ request.user.full_name|first|upper }}
+        </div>
+        <a href="{% url 'student_logout' %}"
+           class="px-3 py-1.5 text-xs font-bold text-red-600 border border-red-200 rounded-lg
+           hover:bg-red-600 hover:text-white transition-all">Logout</a>
+      </div>
+
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+
+
+{% block content %}
+<style>
+.page-wrapper{max-width:900px;margin:0 auto;padding:32px 16px;}
+
+.summary{
+  background:linear-gradient(145deg,#0a5c06,#138808);
+  border-radius:18px;
+  padding:22px;
+  color:#fff;
+  margin-bottom:24px;
+}
+
+.app-card{
+  background:#fff;
+  border-radius:16px;
+  border:1px solid #e2e8f0;
+  margin-bottom:16px;
+  overflow:hidden;
+  transition:0.2s;
+}
+.app-card:hover{
+  box-shadow:0 10px 28px rgba(0,0,0,0.08);
+  transform:translateY(-2px);
+}
+
+.card-bar{
+  height:3px;
+  background:linear-gradient(90deg,#FF9933,#138808);
+}
+
+.status{
+  font-size:0.72rem;
+  font-weight:700;
+  padding:4px 12px;
+  border-radius:100px;
+}
+
+.pending{background:#fef9c3;color:#a16207;}
+.approved{background:#dcfce7;color:#15803d;}
+.rejected{background:#fee2e2;color:#dc2626;}
+
+.meta{font-size:0.78rem;color:#64748b;}
+.empty{text-align:center;padding:80px;color:#94a3b8;}
+</style>
+
+
+<div class="page-wrapper">
+
+<!-- SUMMARY -->
+<div class="summary">
+  <h2 style="margin:0 0 6px;">📄 My Internship Applications</h2>
+  <p style="margin:0;font-size:0.85rem;">
+    Total: {{ total }} |
+    Pending: {{ pending }} |
+    Approved: {{ approved }} |
+    Rejected: {{ rejected }}
+  </p>
+</div>
+
+
+{% if applications %}
+
+  {% for app in applications %}
+  <div class="app-card">
+    <div class="card-bar"></div>
+
+    <div style="padding:20px;">
+
+      <!-- TITLE -->
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;">
+        <div>
+          <h3 style="margin:0;color:#1a3a6b;">
+            {{ app.internship.title }}
+          </h3>
+          <p class="meta">
+            {{ app.internship.company_name }} ·
+            {{ app.internship.location }}
+          </p>
+        </div>
+
+        <!-- STATUS BADGE -->
+        <div>
+          <span class="status {{ app.status }}">
+            {{ app.status|title }}
+          </span>
+        </div>
+      </div>
+
+      <!-- DETAILS -->
+      <div style="margin-top:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+
+        <div class="meta">
+          <strong>Mentor:</strong><br>
+          {{ app.internship.mentor.full_name }}
+        </div>
+
+        <div class="meta">
+          <strong>Stipend:</strong><br>
+          ₹{{ app.internship.stipend_amount }}/month
+        </div>
+
+        <div class="meta">
+          <strong>Applied On:</strong><br>
+          {{ app.applied_at|date:"d M Y" }}
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+  {% endfor %}
+
+{% else %}
+
+<div class="empty">
+  <div style="font-size:3rem;">📭</div>
+  <h3>No Applications Yet</h3>
+  <p>You haven't applied to any internships.</p>
+
+  <a href="{% url 'view_internships' %}"
+     style="display:inline-block;margin-top:16px;
+     background:#138808;color:#fff;padding:10px 22px;
+     border-radius:10px;text-decoration:none;font-weight:700;">
+     Browse Internships
+  </a>
+</div>
+
+{% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,301 @@
+{% extends 'base.html' %}
+{% block title %}Student Dashboard — PM Internship Scheme{% endblock %}
+
+{% block nav %}
+<style>
+  .student-nav-link {
+    display:inline-flex;align-items:center;padding:8px 14px;font-size:0.8rem;
+    font-weight:500;color:#64748b;white-space:nowrap;
+    border-bottom:2px solid transparent;transition:all 0.18s ease;text-decoration:none;
+  }
+  .student-nav-link:hover{color:#1a3a6b;background:#f8fafc;}
+  .student-nav-link.active{color:#1a3a6b;font-weight:700;border-bottom-color:#FF9933;background:#FFF3E0;}
+</style>
+<nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="flex items-center justify-between h-12">
+      <div class="flex overflow-x-auto">
+        <a href="{% url 'student_dashboard' %}" class="student-nav-link active">Dashboard</a>
+        <a href="{% url 'prediction' %}" class="student-nav-link">Prediction</a>
+        <a href="{% url 'view_internships' %}" class="student-nav-link">Internships</a>
+        <a href="{% url 'application_status' %}" class="student-nav-link">Applications</a>
+        <a href="{% url 'learn_classes' %}" class="student-nav-link">Classes</a>
+        <a href="{% url 'my_profile' %}" class="student-nav-link">Profile</a>
+        <a href="{% url 'submit_feedback' %}" class="student-nav-link">Feedback</a>
+      </div>
+      <div class="flex items-center gap-3 ml-3 flex-shrink-0">
+        <div class="hidden md:flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full bg-navy-blue text-white text-xs font-bold flex items-center justify-center">{{ request.user.full_name|first|upper }}</div>
+          <span class="text-xs text-gray-600 font-medium">{{ request.user.full_name }}</span>
+        </div>
+        <a href="{% url 'student_logout' %}" class="px-3 py-1.5 text-xs font-bold text-red-600 border border-red-200 rounded-lg hover:bg-red-600 hover:text-white transition-all">Logout</a>
+      </div>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<style>
+  /* Welcome Banner */
+  .welcome-banner {
+    background: linear-gradient(135deg, #0a1f45 0%, #1a3a6b 55%, #1e4a80 100%);
+    border-radius: 20px; padding: 32px 36px;
+    position: relative; overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .welcome-banner::before {
+    content:''; position:absolute; top:-60px; right:-40px;
+    width:200px; height:200px; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,153,51,0.15) 0%, transparent 70%);
+  }
+  .welcome-banner::after {
+    content:''; position:absolute; bottom:-50px; left:20%;
+    width:160px; height:160px; border-radius:50%;
+    background:radial-gradient(circle, rgba(19,136,8,0.1) 0%, transparent 70%);
+  }
+
+  /* Stat cards */
+  .stat-card {
+    background:#fff; border-radius:14px;
+    border:1px solid #e2e8f0;
+    padding:18px 14px; text-align:center;
+    box-shadow:0 1px 3px rgba(0,0,0,0.04);
+    transition:all 0.2s ease;
+  }
+  .stat-card:hover {
+    transform:translateY(-2px);
+    box-shadow:0 6px 20px rgba(26,58,107,0.08);
+    border-color:#c7d7f0;
+  }
+  .stat-num { font-family:'DM Serif Display',serif; font-size:1.75rem; line-height:1; margin-bottom:4px; }
+
+  /* Quick action cards */
+  .action-card {
+    background:#fff; border-radius:14px;
+    border:1.5px solid #e2e8f0;
+    padding:22px 16px; text-align:center;
+    text-decoration:none; display:block;
+    transition:all 0.22s ease;
+    position:relative; overflow:hidden;
+  }
+  .action-card::after {
+    content:''; position:absolute; bottom:0; left:0; right:0;
+    height:3px; opacity:0; transition:opacity 0.2s;
+  }
+  .action-card:hover { transform:translateY(-3px); box-shadow:0 10px 30px rgba(0,0,0,0.09); }
+  .action-card:hover::after { opacity:1; }
+  .action-card.saffron:hover { border-color:#FF9933; }
+  .action-card.saffron::after { background:#FF9933; }
+  .action-card.green:hover { border-color:#138808; }
+  .action-card.green::after { background:#138808; }
+  .action-card.navy:hover { border-color:#1a3a6b; }
+  .action-card.navy::after { background:#1a3a6b; }
+  .action-card.purple:hover { border-color:#7c3aed; }
+  .action-card.purple::after { background:#7c3aed; }
+
+  .action-icon { font-size:2rem; margin-bottom:10px; display:block; transition:transform 0.3s; }
+  .action-card:hover .action-icon { transform:scale(1.12); }
+
+  /* Section card */
+  .section-card {
+    background:#fff; border-radius:16px;
+    border:1px solid #e2e8f0;
+    overflow:hidden;
+    box-shadow:0 1px 4px rgba(0,0,0,0.04);
+  }
+  .section-header {
+    background:#f8fafc; border-bottom:1px solid #e2e8f0;
+    padding:14px 20px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .section-header h3 { font-size:0.875rem; font-weight:700; color:#1a3a6b; margin:0; }
+
+  /* Status pills */
+  .pill-approved { background:#dcfce7; color:#15803d; font-size:0.7rem; font-weight:700; padding:3px 10px; border-radius:100px; white-space:nowrap; }
+  .pill-rejected { background:#fee2e2; color:#dc2626; font-size:0.7rem; font-weight:700; padding:3px 10px; border-radius:100px; white-space:nowrap; }
+  .pill-pending  { background:#fef9c3; color:#a16207; font-size:0.7rem; font-weight:700; padding:3px 10px; border-radius:100px; white-space:nowrap; }
+
+  /* Benefits strip */
+  .benefits-strip {
+    background:linear-gradient(135deg,#0a1f45 0%,#1a3a6b 100%);
+    border-radius:16px; padding:24px 28px;
+    position:relative; overflow:hidden;
+  }
+  .benefits-strip::before {
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at 80% 50%, rgba(255,153,51,0.08) 0%, transparent 50%);
+  }
+</style>
+
+<div class="max-w-7xl mx-auto px-4 py-8">
+
+  <!-- Welcome Banner -->
+  <div class="welcome-banner">
+    <div class="relative z-10 flex items-center justify-between flex-wrap gap-4">
+      <div>
+        <p style="color:rgba(147,197,253,0.7);font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">Welcome back</p>
+        <h2 style="font-family:'DM Serif Display',serif;font-size:1.8rem;color:#fff;margin:0 0 4px;">{{ request.user.full_name }}</h2>
+        <p style="color:rgba(147,197,253,0.6);font-size:0.8rem;">{{ request.user.email }}</p>
+        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+          <span style="background:rgba(255,153,51,0.2);border:1px solid rgba(255,153,51,0.4);color:#FF9933;font-size:0.7rem;font-weight:700;padding:4px 12px;border-radius:100px;">🎓 Student</span>
+          <span style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.7);font-size:0.7rem;font-weight:600;padding:4px 12px;border-radius:100px;">Joined {{ request.user.date_joined|date:"M Y" }}</span>
+        </div>
+      </div>
+      <div style="font-size:4rem;opacity:0.2;font-family:'DM Serif Display',serif;color:#fff;line-height:1;display:none;" class="md:!block">🏛️</div>
+    </div>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-7">
+    <div class="stat-card">
+      <div class="stat-num text-navy-blue">{{ total_internships }}</div>
+      <p style="font-size:0.7rem;color:#94a3b8;line-height:1.4;">Open<br>Internships</p>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:#3b82f6;">{{ total_applied }}</div>
+      <p style="font-size:0.7rem;color:#94a3b8;line-height:1.4;">My<br>Applications</p>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:#d97706;">{{ pending }}</div>
+      <p style="font-size:0.7rem;color:#94a3b8;line-height:1.4;">Pending<br>Review</p>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:#16a34a;">{{ approved }}</div>
+      <p style="font-size:0.7rem;color:#94a3b8;line-height:1.4;">Approved</p>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:#dc2626;">{{ rejected }}</div>
+      <p style="font-size:0.7rem;color:#94a3b8;line-height:1.4;">Rejected</p>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:#138808;">{{ total_classes }}</div>
+      <p style="font-size:0.7rem;color:#94a3b8;line-height:1.4;">Available<br>Classes</p>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-7">
+    <a href="{% url 'view_internships' %}" class="action-card saffron">
+      <span class="action-icon">💼</span>
+      <div style="font-weight:700;color:#1a3a6b;font-size:0.875rem;margin-bottom:4px;">Browse Internships</div>
+      <div style="font-size:0.7rem;color:#94a3b8;">{{ total_internships }} available</div>
+    </a>
+    <a href="{% url 'application_status' %}" class="action-card green">
+      <span class="action-icon">📋</span>
+      <div style="font-weight:700;color:#1a3a6b;font-size:0.875rem;margin-bottom:4px;">My Applications</div>
+      <div style="font-size:0.7rem;color:#94a3b8;">{{ total_applied }} submitted</div>
+    </a>
+    <a href="{% url 'learn_classes' %}" class="action-card navy">
+      <span class="action-icon">📚</span>
+      <div style="font-weight:700;color:#1a3a6b;font-size:0.875rem;margin-bottom:4px;">Learn Classes</div>
+      <div style="font-size:0.7rem;color:#94a3b8;">{{ total_classes }} classes</div>
+    </a>
+    <a href="{% url 'prediction' %}" class="action-card purple">
+      <span class="action-icon">🔮</span>
+      <div style="font-weight:700;color:#1a3a6b;font-size:0.875rem;margin-bottom:4px;">Career Prediction</div>
+      <div style="font-size:0.7rem;color:#94a3b8;">Get recommendation</div>
+    </a>
+  </div>
+
+  <!-- Two Column -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-7">
+
+    <!-- Recent Applications -->
+    <div class="section-card">
+      <div class="section-header">
+        <h3>Recent Applications</h3>
+        <a href="{% url 'application_status' %}" style="font-size:0.75rem;color:#FF9933;font-weight:600;text-decoration:none;">View All →</a>
+      </div>
+      {% if recent_apps %}
+      <div>
+        {% for app in recent_apps %}
+        <div style="padding:14px 20px;border-bottom:1px solid #f8fafc;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div style="flex:1;min-width:0;">
+            <p style="font-weight:600;color:#1e293b;font-size:0.875rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ app.internship.title }}</p>
+            <p style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">{{ app.internship.company_name }} · {{ app.applied_at|date:"d M Y" }}</p>
+          </div>
+          {% if app.status == 'approved' %}
+            <span class="pill-approved">✓ Approved</span>
+          {% elif app.status == 'rejected' %}
+            <span class="pill-rejected">✕ Rejected</span>
+          {% else %}
+            <span class="pill-pending">⏳ Pending</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="padding:48px 20px;text-align:center;color:#94a3b8;">
+        <div style="font-size:2.5rem;margin-bottom:10px;">📭</div>
+        <p style="font-size:0.875rem;font-weight:500;margin-bottom:6px;">No applications yet</p>
+        <a href="{% url 'view_internships' %}" style="font-size:0.75rem;color:#138808;font-weight:600;text-decoration:none;">Browse internships →</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Profile Card -->
+    <div class="section-card">
+      <div class="section-header">
+        <h3>My Profile</h3>
+        <a href="{% url 'my_profile' %}" style="font-size:0.75rem;color:#FF9933;font-weight:600;text-decoration:none;">Edit →</a>
+      </div>
+      <div style="padding:20px;">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+          <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#1a3a6b,#1e4a80);color:#fff;font-size:1.2rem;font-family:'DM Serif Display',serif;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(26,58,107,0.25);">
+            {{ request.user.full_name|first|upper }}
+          </div>
+          <div>
+            <p style="font-weight:700;color:#1e293b;font-size:0.95rem;">{{ request.user.full_name }}</p>
+            <p style="font-size:0.75rem;color:#94a3b8;margin-top:2px;">{{ request.user.email }}</p>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="background:#f8fafc;border-radius:10px;padding:12px;">
+            <p style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;">Role</p>
+            <span style="background:rgba(255,153,51,0.15);border:1px solid rgba(255,153,51,0.4);color:#c2570a;font-size:0.7rem;font-weight:700;padding:3px 10px;border-radius:100px;">Student</span>
+          </div>
+          <div style="background:#f8fafc;border-radius:10px;padding:12px;">
+            <p style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;">Joined</p>
+            <p style="font-size:0.8rem;font-weight:600;color:#334155;">{{ request.user.date_joined|date:"d M Y" }}</p>
+          </div>
+          <div style="background:#f8fafc;border-radius:10px;padding:12px;">
+            <p style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;">Applications</p>
+            <p style="font-size:0.8rem;font-weight:600;color:#334155;">{{ total_applied }} submitted</p>
+          </div>
+          <div style="background:#f8fafc;border-radius:10px;padding:12px;">
+            <p style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;">Approved</p>
+            <p style="font-size:0.8rem;font-weight:600;color:#16a34a;">{{ approved }} internships</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Benefits Strip -->
+  <div class="benefits-strip">
+    <div class="relative z-10">
+      <p style="color:#FF9933;font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:14px;">📌 PM Internship Scheme — Key Benefits</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;">
+        <div style="display:flex;align-items:flex-start;gap:8px;">
+          <span style="color:#FF9933;flex-shrink:0;">✦</span>
+          <p style="font-size:0.78rem;color:rgba(191,219,254,0.8);line-height:1.5;">Monthly stipend of ₹5,000 from Government of India during internship.</p>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:8px;">
+          <span style="color:#FF9933;flex-shrink:0;">✦</span>
+          <p style="font-size:0.78rem;color:rgba(191,219,254,0.8);line-height:1.5;">One-time ₹6,000 assistance provided at the start of internship.</p>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:8px;">
+          <span style="color:#FF9933;flex-shrink:0;">✦</span>
+          <p style="font-size:0.78rem;color:rgba(191,219,254,0.8);line-height:1.5;">Insurance coverage under PM Suraksha Bima Yojana included.</p>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:8px;">
+          <span style="color:#FF9933;flex-shrink:0;">✦</span>
+          <p style="font-size:0.78rem;color:rgba(191,219,254,0.8);line-height:1.5;">Government-recognized certificate issued by Ministry of Corporate Affairs.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

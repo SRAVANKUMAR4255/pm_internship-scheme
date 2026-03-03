@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+{% block title %}My Classes — PM Internship Scheme{% endblock %}
+
+{% block nav %}
+<style>
+  .student-nav-link{display:inline-flex;align-items:center;padding:8px 14px;font-size:0.8rem;font-weight:500;color:#64748b;white-space:nowrap;border-bottom:2px solid transparent;transition:all 0.18s ease;text-decoration:none;}
+  .student-nav-link:hover{color:#1a3a6b;background:#f8fafc;}
+  .student-nav-link.active{color:#1a3a6b;font-weight:700;border-bottom-color:#FF9933;background:#FFF3E0;}
+</style>
+<nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="flex items-center justify-between h-12">
+      <div class="flex overflow-x-auto">
+        <a href="{% url 'student_dashboard' %}" class="student-nav-link">Dashboard</a>
+        <a href="{% url 'prediction' %}" class="student-nav-link">Prediction</a>
+        <a href="{% url 'view_internships' %}" class="student-nav-link">Internships</a>
+        <a href="{% url 'application_status' %}" class="student-nav-link">Applications</a>
+        <a href="{% url 'learn_classes' %}" class="student-nav-link">Classes</a>
+        <a href="{% url 'my_classes' %}" class="student-nav-link active">My Classes</a>
+        <a href="{% url 'my_profile' %}" class="student-nav-link">Profile</a>
+        <a href="{% url 'submit_feedback' %}" class="student-nav-link">Feedback</a>
+      </div>
+      <div class="flex items-center gap-3 ml-3 flex-shrink-0">
+        <div class="hidden md:flex items-center gap-2">
+          <div style="width:28px;height:28px;border-radius:50%;background:#1a3a6b;color:#fff;font-size:0.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ request.user.full_name|first|upper }}</div>
+          <span style="font-size:0.75rem;color:#64748b;font-weight:500;">{{ request.user.full_name }}</span>
+        </div>
+        <a href="{% url 'student_logout' %}" class="px-3 py-1.5 text-xs font-bold text-red-600 border border-red-200 rounded-lg hover:bg-red-600 hover:text-white transition-all">Logout</a>
+      </div>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<style>
+  .page-wrapper{max-width:920px;margin:0 auto;padding:32px 16px;}
+
+  /* Summary banner */
+  .summary-banner{background:linear-gradient(145deg,#0a5c06 0%,#138808 55%,#1aa80a 100%);border-radius:18px;padding:24px 28px;margin-bottom:24px;position:relative;overflow:hidden;}
+  .summary-banner::before{content:'';position:absolute;top:-40px;right:-30px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.08) 0%,transparent 70%);}
+  .summary-banner::after{content:'';position:absolute;bottom:-30px;left:20%;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(255,153,51,0.08) 0%,transparent 70%);}
+
+  /* Enrolled class card */
+  .cls-card{background:#fff;border-radius:16px;border:1px solid #bbf7d0;overflow:hidden;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,0.04),0 0 0 1px rgba(19,136,8,0.04);transition:all 0.22s ease;}
+  .cls-card:hover{box-shadow:0 8px 28px rgba(19,136,8,0.1);transform:translateY(-2px);}
+  .cls-card-bar{height:3px;background:linear-gradient(90deg,#0a5c06,#138808,#22c55e);}
+
+  /* Stats */
+  .cls-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0;}
+  @media(max-width:600px){.cls-stats{grid-template-columns:1fr 1fr;}}
+  .cls-stat{background:#f0fdf4;border-radius:8px;padding:10px 12px;text-align:center;border:1px solid #dcfce7;}
+
+  /* Level badges */
+  .badge-beginner{background:#dcfce7;color:#15803d;font-size:0.65rem;font-weight:700;padding:2px 8px;border-radius:100px;}
+  .badge-intermediate{background:#fef9c3;color:#a16207;font-size:0.65rem;font-weight:700;padding:2px 8px;border-radius:100px;}
+  .badge-advanced{background:#fee2e2;color:#dc2626;font-size:0.65rem;font-weight:700;padding:2px 8px;border-radius:100px;}
+
+  /* Learn tags */
+  .learn-tag{display:inline-flex;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:0.68rem;font-weight:600;padding:3px 10px;border-radius:100px;margin:2px;}
+
+  /* Action buttons */
+  .btn-join{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#138808,#0f6606);color:#fff;font-size:0.8rem;font-weight:700;padding:10px 20px;border-radius:10px;text-decoration:none;box-shadow:0 4px 14px rgba(19,136,8,0.3);transition:all 0.22s;}
+  .btn-join:hover{box-shadow:0 6px 20px rgba(19,136,8,0.4);transform:translateY(-1px);}
+  .btn-materials{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#1a3a6b,#1e4a80);color:#fff;font-size:0.8rem;font-weight:700;padding:10px 20px;border-radius:10px;text-decoration:none;box-shadow:0 4px 14px rgba(26,58,107,0.2);transition:all 0.22s;}
+  .btn-materials:hover{box-shadow:0 6px 20px rgba(26,58,107,0.3);transform:translateY(-1px);}
+  .btn-no-link{display:inline-flex;align-items:center;gap:6px;background:#f1f5f9;border:1.5px solid #e2e8f0;color:#94a3b8;font-size:0.8rem;font-weight:600;padding:10px 20px;border-radius:10px;cursor:not-allowed;}
+
+  .meta-chip{font-size:0.72rem;color:#64748b;display:inline-flex;align-items:center;gap:3px;}
+
+  /* Progress tracker (visual only) */
+  .enroll-date-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);color:#fff;font-size:0.7rem;font-weight:600;padding:4px 12px;border-radius:100px;}
+
+  .empty-state{text-align:center;padding:80px 20px;color:#94a3b8;}
+</style>
+
+<div class="page-wrapper">
+
+  <!-- Breadcrumb -->
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;">
+    <a href="{% url 'student_dashboard' %}" style="font-size:0.75rem;color:#1a3a6b;text-decoration:none;">← Dashboard</a>
+    <span style="font-size:0.75rem;color:#94a3b8;">/</span>
+    <a href="{% url 'learn_classes' %}" style="font-size:0.75rem;color:#1a3a6b;text-decoration:none;">Classes</a>
+    <span style="font-size:0.75rem;color:#94a3b8;">/</span>
+    <span style="font-size:0.75rem;color:#475569;font-weight:500;">My Classes</span>
+  </div>
+
+  {% if enrollments %}
+
+  <!-- Summary Banner -->
+  <div class="summary-banner">
+    <div style="position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+      <div>
+        <p style="color:rgba(187,247,208,0.7);font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;margin:0 0 6px;">Your Learning Journey</p>
+        <h2 style="font-family:'DM Serif Display',serif;font-size:1.6rem;color:#fff;margin:0 0 6px;">My Enrolled Classes</h2>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <span class="enroll-date-badge">📚 {{ total }} Class{{ total|pluralize:"es" }} Enrolled</span>
+        </div>
+      </div>
+      <a href="{% url 'learn_classes' %}" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.22);color:#fff;font-size:0.78rem;font-weight:600;padding:10px 18px;border-radius:10px;text-decoration:none;backdrop-filter:blur(4px);position:relative;z-index:1;">
+        Browse More Classes →
+      </a>
+    </div>
+  </div>
+
+  <!-- Enrolled class cards -->
+  {% for enrollment in enrollments %}
+  {% with cls=enrollment.learn_class %}
+  <div class="cls-card">
+    <div class="cls-card-bar"></div>
+    <div style="padding:20px;">
+
+      <!-- Header -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px;">
+        <div style="flex:1;min-width:200px;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+            <h3 style="font-family:'DM Serif Display',serif;font-size:1.1rem;color:#1a3a6b;margin:0;">{{ cls.title }}</h3>
+            {% if cls.level == 'beginner' %}<span class="badge-beginner">🟢 Beginner</span>
+            {% elif cls.level == 'intermediate' %}<span class="badge-intermediate">🟡 Intermediate</span>
+            {% elif cls.level == 'advanced' %}<span class="badge-advanced">🔴 Advanced</span>{% endif %}
+            <span style="background:#dcfce7;border:1px solid #86efac;color:#15803d;font-size:0.65rem;font-weight:700;padding:2px 8px;border-radius:100px;">✓ Enrolled</span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:4px;">
+            {% if cls.get_category_display %}<span class="meta-chip">📁 {{ cls.get_category_display }}</span>{% endif %}
+            {% if cls.get_format_display %}<span class="meta-chip">🎥 {{ cls.get_format_display }}</span>{% endif %}
+            {% if cls.language %}<span class="meta-chip">🌐 {{ cls.language }}</span>{% endif %}
+            <span class="meta-chip">👨‍💼 {{ cls.mentor.full_name }}</span>
+          </div>
+        </div>
+
+        <!-- Enrolled since -->
+        <div style="flex-shrink:0;text-align:right;">
+          <p style="font-size:0.62rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin:0 0 3px;">Enrolled on</p>
+          <p style="font-size:0.875rem;font-weight:700;color:#138808;margin:0;">{{ enrollment.enrolled_at|date:"d M Y" }}</p>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="cls-stats">
+        <div class="cls-stat">
+          <p style="font-size:0.62rem;color:#138808;margin:0 0 3px;text-transform:uppercase;font-weight:700;">Duration</p>
+          <p style="font-size:0.875rem;font-weight:700;color:#1a3a6b;margin:0;">{{ cls.duration_hours }}h/session</p>
+        </div>
+        <div class="cls-stat">
+          <p style="font-size:0.62rem;color:#138808;margin:0 0 3px;text-transform:uppercase;font-weight:700;">Sessions</p>
+          <p style="font-size:0.875rem;font-weight:700;color:#1a3a6b;margin:0;">{{ cls.total_sessions }}</p>
+        </div>
+        <div class="cls-stat">
+          <p style="font-size:0.62rem;color:#138808;margin:0 0 3px;text-transform:uppercase;font-weight:700;">Seats</p>
+          <p style="font-size:0.875rem;font-weight:700;color:#1a3a6b;margin:0;">{{ cls.max_students }}</p>
+        </div>
+        <div class="cls-stat">
+          <p style="font-size:0.62rem;color:#138808;margin:0 0 3px;text-transform:uppercase;font-weight:700;">Total Enrolled</p>
+          <p style="font-size:0.875rem;font-weight:700;color:#138808;margin:0;">{{ cls.enrollments.count }}</p>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <p style="font-size:0.875rem;color:#475569;line-height:1.7;margin-bottom:14px;">{{ cls.description }}</p>
+
+      {% if cls.what_you_will_learn %}
+      <div style="margin-bottom:14px;">
+        <p style="font-size:0.65rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:7px;">📖 What You Will Learn</p>
+        <div>{% for point in cls.get_learning_list %}<span class="learn-tag">✓ {{ point }}</span>{% endfor %}</div>
+      </div>
+      {% endif %}
+
+      {% if cls.schedule %}
+      <div style="background:#FFF3E0;border:1px solid #fed7aa;border-radius:10px;padding:12px 16px;margin-bottom:14px;">
+        <p style="font-size:0.65rem;font-weight:700;color:#FF9933;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px;">📅 Schedule</p>
+        <p style="font-size:0.875rem;color:#334155;line-height:1.6;margin:0;">{{ cls.schedule }}</p>
+      </div>
+      {% endif %}
+
+      {% if cls.prerequisites or cls.target_audience %}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        {% if cls.prerequisites %}
+        <div style="background:#f8fafc;border-radius:10px;padding:12px;border:1px solid #e2e8f0;">
+          <p style="font-size:0.62rem;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:0 0 4px;">Prerequisites</p>
+          <p style="font-size:0.78rem;color:#475569;line-height:1.5;margin:0;">{{ cls.prerequisites }}</p>
+        </div>
+        {% endif %}
+        {% if cls.target_audience %}
+        <div style="background:#f8fafc;border-radius:10px;padding:12px;border:1px solid #e2e8f0;">
+          <p style="font-size:0.62rem;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:0 0 4px;">Who Should Attend</p>
+          <p style="font-size:0.78rem;color:#475569;line-height:1.5;margin:0;">{{ cls.target_audience }}</p>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Action Buttons -->
+      <div style="padding-top:14px;border-top:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <span style="font-size:0.72rem;color:#94a3b8;">📅 Class added {{ cls.created_at|date:"d M Y" }}</span>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          {% if cls.join_link %}
+          <a href="{{ cls.join_link }}" target="_blank" class="btn-join">🎥 Join Class</a>
+          {% else %}
+          <span class="btn-no-link" title="No join link provided yet">🎥 Link Pending</span>
+          {% endif %}
+          {% if cls.resources_link %}
+          <a href="{{ cls.resources_link }}" target="_blank" class="btn-materials">📁 Study Materials</a>
+          {% else %}
+          <span class="btn-no-link" title="No materials link provided yet">📁 Materials Pending</span>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+  {% endwith %}
+  {% endfor %}
+
+  {% else %}
+  <!-- Empty state -->
+  <div class="empty-state">
+    <div style="font-size:3.5rem;margin-bottom:16px;">🎓</div>
+    <p style="font-size:1.05rem;font-weight:600;color:#475569;margin-bottom:6px;">No classes enrolled yet</p>
+    <p style="font-size:0.875rem;margin-bottom:22px;">Browse available classes and click <strong>Enroll Now</strong> to start learning.</p>
+    <a href="{% url 'learn_classes' %}" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#138808,#0a5c06);color:#fff;font-size:0.875rem;font-weight:700;padding:12px 24px;border-radius:12px;text-decoration:none;box-shadow:0 4px 14px rgba(19,136,8,0.3);">
+      📚 Browse All Classes
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

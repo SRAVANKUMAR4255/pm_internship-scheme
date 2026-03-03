@@ -1,0 +1,396 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Login — PM Internship Scheme{% endblock %}
+
+{% block nav %}
+<nav class="bg-white border-b-2 border-saffron shadow-sm">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="flex items-center justify-between h-12">
+            <div class="flex space-x-1">
+                <a href="{% url 'home' %}" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-navy-blue hover:bg-gray-100 transition-colors">Home</a>
+                <a href="{% url 'about' %}" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-navy-blue hover:bg-gray-100 transition-colors">About</a>
+            </div>
+            <div class="flex space-x-2">
+                <a href="{% url 'student_login' %}" class="px-4 py-1.5 text-sm font-semibold text-white bg-navy-blue rounded-md shadow-sm">Login</a>
+                <a href="{% url 'register' %}" class="px-4 py-1.5 text-sm font-medium text-navy-blue border border-navy-blue rounded-md hover:bg-navy-blue hover:text-white transition-all duration-200">Register</a>
+            </div>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap');
+
+    .login-wrapper {
+        font-family: 'DM Sans', sans-serif;
+        min-height: calc(100vh - 100px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 16px;
+        background-color: #f1f5f9;
+        background-image:
+            radial-gradient(circle at 15% 20%, rgba(255, 153, 51, 0.08) 0%, transparent 50%),
+            radial-gradient(circle at 85% 80%, rgba(19, 136, 8, 0.07) 0%, transparent 50%),
+            radial-gradient(circle at 50% 50%, rgba(26, 58, 107, 0.04) 0%, transparent 60%);
+    }
+
+    .login-card {
+        width: 100%;
+        max-width: 440px;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow:
+            0 0 0 1px rgba(26, 58, 107, 0.06),
+            0 4px 6px -1px rgba(26, 58, 107, 0.04),
+            0 20px 60px -10px rgba(26, 58, 107, 0.14);
+        overflow: hidden;
+        animation: slideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(28px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Card Header ── */
+    .card-header {
+        background: linear-gradient(145deg, #0f2952 0%, #1a3a6b 55%, #1e4a80 100%);
+        padding: 36px 32px 32px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .card-header::before {
+        content: '';
+        position: absolute;
+        top: -40px; right: -40px;
+        width: 140px; height: 140px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255,153,51,0.18) 0%, transparent 70%);
+    }
+
+    .card-header::after {
+        content: '';
+        position: absolute;
+        bottom: -30px; left: -30px;
+        width: 100px; height: 100px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(19,136,8,0.15) 0%, transparent 70%);
+    }
+
+    .header-icon-ring {
+        width: 68px; height: 68px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.08);
+        border: 2px solid rgba(255,255,255,0.15);
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 14px;
+        position: relative; z-index: 1;
+        font-size: 28px;
+        backdrop-filter: blur(4px);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+
+    .card-header h2 {
+        font-family: 'DM Serif Display', serif;
+        font-size: 1.5rem;
+        color: #ffffff;
+        position: relative; z-index: 1;
+        margin: 0 0 6px;
+    }
+
+    .card-header p {
+        font-size: 0.72rem;
+        color: rgba(180, 200, 230, 0.85);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        position: relative; z-index: 1;
+    }
+
+    /* ── Tricolor accent strip ── */
+    .tricolor-strip {
+        height: 3px;
+        background: linear-gradient(90deg, #FF9933 33.33%, #ffffff 33.33%, #ffffff 66.66%, #138808 66.66%);
+    }
+
+    /* ── Form Body ── */
+    .card-body {
+        padding: 32px 32px 28px;
+    }
+
+    .field-group {
+        margin-bottom: 20px;
+    }
+
+    .field-label {
+        display: block;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: #475569;
+        margin-bottom: 7px;
+    }
+
+    .field-input {
+        width: 100%;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 11px 16px;
+        font-size: 0.875rem;
+        font-family: 'DM Sans', sans-serif;
+        color: #1e293b;
+        background: #f8fafc;
+        transition: all 0.2s ease;
+        outline: none;
+        box-sizing: border-box;
+    }
+
+    .field-input::placeholder { color: #94a3b8; }
+
+    .field-input:focus {
+        border-color: #1a3a6b;
+        background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(26, 58, 107, 0.09);
+    }
+
+    /* ── Password wrapper with toggle ── */
+    .password-wrapper {
+        position: relative;
+    }
+
+    .password-wrapper .field-input {
+        padding-right: 44px;
+    }
+
+    .pwd-toggle {
+        position: absolute;
+        right: 13px; top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: #94a3b8;
+        background: none; border: none;
+        padding: 0; line-height: 1;
+        font-size: 16px;
+        transition: color 0.2s;
+    }
+
+    .pwd-toggle:hover { color: #1a3a6b; }
+
+    /* ── Submit button ── */
+    .btn-login {
+        width: 100%;
+        background: linear-gradient(135deg, #FF9933 0%, #e8851f 100%);
+        color: #ffffff;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.875rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        padding: 13px 20px;
+        border-radius: 10px;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(255, 153, 51, 0.35);
+        transition: all 0.22s ease;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        margin-top: 6px;
+    }
+
+    .btn-login:hover {
+        background: linear-gradient(135deg, #e8851f 0%, #d4750f 100%);
+        box-shadow: 0 6px 20px rgba(255, 153, 51, 0.45);
+        transform: translateY(-1px);
+    }
+
+    .btn-login:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(255, 153, 51, 0.3);
+    }
+
+    /* ── Register link ── */
+    .register-nudge {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+
+    .register-nudge a {
+        color: #1a3a6b;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .register-nudge a:hover { text-decoration: underline; }
+
+    /* ── Other portals ── */
+    .other-portals {
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .other-portals-label {
+        text-align: center;
+        font-size: 0.7rem;
+        color: #94a3b8;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+    }
+
+    .portal-links {
+        display: flex;
+        gap: 10px;
+    }
+
+    .portal-link {
+        flex: 1;
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        padding: 9px 12px;
+        border-radius: 9px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: 1.5px solid transparent;
+    }
+
+    .portal-link-mentor {
+        background: #f0fdf4;
+        color: #138808;
+        border-color: #bbf7d0;
+    }
+
+    .portal-link-mentor:hover {
+        background: #138808;
+        color: white;
+        border-color: #138808;
+        box-shadow: 0 3px 10px rgba(19,136,8,0.2);
+    }
+
+    .portal-link-admin {
+        background: #eff6ff;
+        color: #1a3a6b;
+        border-color: #bfdbfe;
+    }
+
+    .portal-link-admin:hover {
+        background: #1a3a6b;
+        color: white;
+        border-color: #1a3a6b;
+        box-shadow: 0 3px 10px rgba(26,58,107,0.2);
+    }
+
+    /* ── Security badge ── */
+    .security-note {
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        margin-top: 20px;
+        font-size: 0.68rem;
+        color: #94a3b8;
+    }
+</style>
+
+<div class="login-wrapper">
+    <div style="width:100%; max-width:440px;">
+
+        <div class="login-card">
+            <!-- Header -->
+            <div class="card-header">
+                <div class="header-icon-ring">🎓</div>
+                <h2>Student Login</h2>
+                <p>PM Internship Scheme Portal</p>
+            </div>
+
+            <!-- Tricolor strip -->
+            <div class="tricolor-strip"></div>
+
+            <!-- Form Body -->
+            <div class="card-body">
+                <form method="POST" novalidate>
+                    {% csrf_token %}
+
+                    <div class="field-group">
+                        <label class="field-label" for="email">Email Address *</label>
+                        <input
+                            class="field-input"
+                            type="email"
+                            id="email"
+                            name="email"
+                            required
+                            placeholder="yourname@email.com"
+                            value="{{ request.POST.email }}"
+                            autocomplete="email"
+                        >
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label" for="password">Password *</label>
+                        <div class="password-wrapper">
+                            <input
+                                class="field-input"
+                                type="password"
+                                id="password"
+                                name="password"
+                                required
+                                placeholder="Enter your password"
+                                autocomplete="current-password"
+                            >
+                            <button type="button" class="pwd-toggle" id="togglePwd" title="Show/hide password" aria-label="Toggle password visibility">
+                                👁️
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-login">
+                        <span>Login to Portal</span>
+                        <span>→</span>
+                    </button>
+                </form>
+
+                <p class="register-nudge">
+                    New user? <a href="{% url 'register' %}">Create an account</a>
+                </p>
+
+                <!-- Other portals -->
+                <div class="other-portals">
+                    <p class="other-portals-label">Other portals</p>
+                    <div class="portal-links">
+                        <a href="{% url 'mentor_login' %}" class="portal-link portal-link-mentor">
+                            <span>👨‍💼</span> Mentor Portal
+                        </a>
+                        <a href="{% url 'admin_login' %}" class="portal-link portal-link-admin">
+                            <span>🏛️</span> Admin Portal
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Security note -->
+                <div class="security-note">
+                    <span>🔒</span>
+                    <span>Secured by Government of India · Ministry of Corporate Affairs</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const togglePwd = document.getElementById('togglePwd');
+    const pwdInput  = document.getElementById('password');
+    if (togglePwd && pwdInput) {
+        togglePwd.addEventListener('click', () => {
+            const isText = pwdInput.type === 'text';
+            pwdInput.type = isText ? 'password' : 'text';
+            togglePwd.textContent = isText ? '👁️' : '🙈';
+        });
+    }
+</script>
+
+{% endblock %}

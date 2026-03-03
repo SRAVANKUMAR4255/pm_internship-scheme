@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+{% block title %}Update Application — PM Internship Scheme{% endblock %}
+
+{% block nav %}
+<style>
+  .mentor-nav-link{display:inline-flex;align-items:center;padding:8px 14px;font-size:0.8rem;font-weight:500;color:#64748b;white-space:nowrap;border-bottom:2px solid transparent;transition:all 0.18s ease;text-decoration:none;}
+  .mentor-nav-link:hover{color:#138808;background:#f0fdf4;}
+  .mentor-nav-link.active{color:#138808;font-weight:700;border-bottom-color:#138808;background:#f0fdf4;}
+</style>
+<nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="flex items-center justify-between h-12">
+      <div class="flex overflow-x-auto">
+        <a href="{% url 'mentor_dashboard' %}" class="mentor-nav-link">Dashboard</a>
+        <a href="{% url 'create_internship' %}" class="mentor-nav-link">Create Internship</a>
+        <a href="{% url 'view_applications' %}" class="mentor-nav-link active">Applications</a>
+        <a href="{% url 'create_class' %}" class="mentor-nav-link">Create Class</a>
+      </div>
+      <div class="flex items-center gap-3 ml-3 flex-shrink-0">
+        <div class="hidden md:flex items-center gap-2">
+          <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#138808,#0a5c06);color:#fff;font-size:0.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ request.user.full_name|first|upper }}</div>
+          <span style="font-size:0.75rem;color:#64748b;font-weight:500;">{{ request.user.full_name }}</span>
+        </div>
+        <a href="{% url 'mentor_logout' %}" class="px-3 py-1.5 text-xs font-bold text-red-600 border border-red-200 rounded-lg hover:bg-red-600 hover:text-white transition-all">Logout</a>
+      </div>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<style>
+  .page-wrapper{max-width:640px;margin:0 auto;padding:32px 16px;}
+
+  .form-card{background:#fff;border-radius:20px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.05),0 8px 32px rgba(26,58,107,0.07);}
+  .form-card-header{background:linear-gradient(145deg,#0f2952 0%,#1a3a6b 55%,#1e4a80 100%);padding:24px 28px;position:relative;overflow:hidden;}
+  .form-card-header::before{content:'';position:absolute;top:-40px;right:-30px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(19,136,8,0.15) 0%,transparent 70%);}
+  .tricolor-strip{height:3px;background:linear-gradient(90deg,#FF9933 33.33%,#fff 33.33%,#fff 66.66%,#138808 66.66%);}
+  .form-body{padding:28px;}
+
+  /* Info cards */
+  .info-box{border-radius:12px;padding:14px 16px;margin-bottom:16px;}
+
+  /* Radio status cards */
+  .status-radio-label{cursor:pointer;display:block;}
+  .status-radio-card{border:2px solid #e2e8f0;border-radius:12px;padding:14px 12px;text-align:center;transition:all 0.2s;}
+  .status-radio-label input:checked + .status-radio-card.pending{border-color:#d97706;background:#fefce8;}
+  .status-radio-label input:checked + .status-radio-card.approved{border-color:#16a34a;background:#f0fdf4;}
+  .status-radio-label input:checked + .status-radio-card.rejected{border-color:#dc2626;background:#fff1f2;}
+  .status-radio-card:hover{border-color:#94a3b8;}
+
+  /* Textarea */
+  .field-label{display:block;font-size:0.68rem;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:#475569;margin-bottom:5px;}
+  .field-label .req{color:#dc2626;margin-left:2px;}
+  .field-textarea{width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:11px 14px;font-size:0.875rem;color:#1e293b;background:#f8fafc;transition:all 0.2s;outline:none;box-sizing:border-box;font-family:'DM Sans',sans-serif;resize:none;line-height:1.7;}
+  .field-textarea:focus{border-color:#138808;background:#fff;box-shadow:0 0 0 3px rgba(19,136,8,0.08);}
+  .field-textarea::placeholder{color:#94a3b8;}
+  .field-hint{font-size:0.68rem;color:#94a3b8;margin-top:4px;}
+
+  .btn-cancel{flex:1;text-align:center;display:block;background:#f8fafc;border:1.5px solid #e2e8f0;color:#64748b;font-weight:700;font-size:0.875rem;padding:13px 20px;border-radius:12px;text-decoration:none;transition:all 0.2s;}
+  .btn-cancel:hover{background:#e2e8f0;}
+  .btn-save{flex:1;text-align:center;display:block;background:linear-gradient(135deg,#138808,#0a5c06);color:#fff;font-weight:700;font-size:0.875rem;padding:13px 20px;border-radius:12px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(19,136,8,0.3);transition:all 0.22s;font-family:'DM Sans',sans-serif;}
+  .btn-save:hover{box-shadow:0 6px 20px rgba(19,136,8,0.4);transform:translateY(-1px);}
+</style>
+
+<div class="page-wrapper">
+
+  <!-- Breadcrumb -->
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:20px;">
+    <a href="{% url 'view_applications' %}" style="font-size:0.75rem;color:#1a3a6b;text-decoration:none;">← Applications</a>
+    <span style="font-size:0.75rem;color:#94a3b8;">/</span>
+    <span style="font-size:0.75rem;color:#475569;font-weight:500;">Update Application</span>
+  </div>
+
+  <div class="form-card">
+    <!-- Header -->
+    <div class="form-card-header">
+      <div style="position:relative;z-index:1;display:flex;align-items:center;gap:14px;">
+        <div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">✏️</div>
+        <div>
+          <h2 style="font-family:'DM Serif Display',serif;font-size:1.2rem;color:#fff;margin:0 0 3px;">Update Application</h2>
+          <p style="font-size:0.7rem;color:rgba(147,197,253,0.8);text-transform:uppercase;letter-spacing:0.07em;margin:0;">Review & update applicant status</p>
+        </div>
+      </div>
+    </div>
+    <div class="tricolor-strip"></div>
+
+    <div class="form-body">
+
+      <!-- Student Info -->
+      <div class="info-box" style="background:#f8fafc;border:1px solid #e2e8f0;">
+        <p style="font-size:0.65rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.07em;margin:0 0 10px;">Applicant</p>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#1a3a6b,#1e4a80);color:#fff;font-family:'DM Serif Display',serif;font-size:1.1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 10px rgba(26,58,107,0.2);">{{ application.student.full_name|first|upper }}</div>
+          <div>
+            <p style="font-weight:700;color:#1e293b;font-size:0.925rem;margin:0 0 2px;">{{ application.student.full_name }}</p>
+            <p style="font-size:0.75rem;color:#94a3b8;margin:0 0 2px;">{{ application.student.email }}</p>
+            <p style="font-size:0.7rem;color:#94a3b8;margin:0;">Applied {{ application.applied_at|date:"d M Y, h:i A" }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Internship Info -->
+      <div class="info-box" style="background:#eff6ff;border:1px solid #bfdbfe;">
+        <p style="font-size:0.65rem;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:0.07em;margin:0 0 6px;">Internship</p>
+        <p style="font-family:'DM Serif Display',serif;font-size:0.95rem;font-weight:700;color:#1a3a6b;margin:0 0 4px;">{{ application.internship.title }}</p>
+        <p style="font-size:0.75rem;color:#64748b;margin:0;">{{ application.internship.company_name }} · {{ application.internship.location }} · {{ application.internship.get_mode_display }} · ₹{{ application.internship.stipend_amount }}/mo · {{ application.internship.get_duration_display }}</p>
+      </div>
+
+      <!-- Current Status -->
+      <div class="info-box" style="
+        {% if application.status == 'approved' %}background:#f0fdf4;border:1px solid #bbf7d0;
+        {% elif application.status == 'rejected' %}background:#fff1f2;border:1px solid #fecdd3;
+        {% else %}background:#fefce8;border:1px solid #fde68a;{% endif %}
+        margin-bottom:24px;">
+        <p style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;margin:0 0 6px;
+          {% if application.status == 'approved' %}color:#16a34a;{% elif application.status == 'rejected' %}color:#dc2626;{% else %}color:#d97706;{% endif %}">Current Status</p>
+        <div style="display:flex;align-items:center;gap:8px;">
+          {% if application.status == 'approved' %}
+          <span style="font-weight:700;font-size:0.875rem;color:#16a34a;">✅ Approved</span>
+          {% elif application.status == 'rejected' %}
+          <span style="font-weight:700;font-size:0.875rem;color:#dc2626;">❌ Rejected</span>
+          {% else %}
+          <span style="font-weight:700;font-size:0.875rem;color:#d97706;">⏳ Pending Review</span>
+          {% endif %}
+        </div>
+        {% if application.status_message %}
+        <p style="font-size:0.75rem;color:#64748b;margin:8px 0 0;font-style:italic;line-height:1.5;">"{{ application.status_message }}"</p>
+        {% endif %}
+      </div>
+
+      <form method="POST" style="space-y:0;">
+        {% csrf_token %}
+
+        <!-- Status Selector -->
+        <div style="margin-bottom:22px;">
+          <label class="field-label">Update Status <span class="req">*</span></label>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:8px;">
+            <label class="status-radio-label">
+              <input type="radio" name="status" value="pending" class="sr-only" {% if application.status == 'pending' %}checked{% endif %}>
+              <div class="status-radio-card pending">
+                <div style="font-size:1.4rem;margin-bottom:4px;">⏳</div>
+                <div style="font-size:0.75rem;font-weight:700;color:#d97706;">Pending</div>
+              </div>
+            </label>
+            <label class="status-radio-label">
+              <input type="radio" name="status" value="approved" class="sr-only" {% if application.status == 'approved' %}checked{% endif %}>
+              <div class="status-radio-card approved">
+                <div style="font-size:1.4rem;margin-bottom:4px;">✅</div>
+                <div style="font-size:0.75rem;font-weight:700;color:#16a34a;">Approved</div>
+              </div>
+            </label>
+            <label class="status-radio-label">
+              <input type="radio" name="status" value="rejected" class="sr-only" {% if application.status == 'rejected' %}checked{% endif %}>
+              <div class="status-radio-card rejected">
+                <div style="font-size:1.4rem;margin-bottom:4px;">❌</div>
+                <div style="font-size:0.75rem;font-weight:700;color:#dc2626;">Rejected</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Status Message -->
+        <div style="margin-bottom:18px;">
+          <label class="field-label">Status Message to Student <span class="req">*</span></label>
+          <p style="font-size:0.68rem;color:#94a3b8;margin:0 0 6px;">Required when approving or rejecting</p>
+          <textarea class="field-textarea" name="status_message" rows="4" placeholder="e.g. Approved: Congratulations! Please report on Monday 9 AM.&#10;Rejected: Thank you for applying. We regret to inform...">{{ application.status_message|default:'' }}</textarea>
+        </div>
+
+        <!-- Additional Feedback -->
+        <div style="margin-bottom:24px;">
+          <label class="field-label">Additional Feedback / Note <span style="font-weight:400;color:#94a3b8;">(Optional)</span></label>
+          <textarea class="field-textarea" name="feedback" rows="3" placeholder="e.g. Please carry your original certificates. Prepare a short introduction...">{{ application.mentor_feedback|default:'' }}</textarea>
+          <p class="field-hint">Shown to student alongside their application status.</p>
+        </div>
+
+        <!-- Buttons -->
+        <div style="display:flex;gap:12px;">
+          <a href="{% url 'view_applications' %}" class="btn-cancel">Cancel</a>
+          <button type="submit" class="btn-save">✓ Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* Visual radio card highlight on change */
+  document.querySelectorAll('.status-radio-label input[type="radio"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      document.querySelectorAll('.status-radio-card').forEach(c => {
+        c.style.borderColor = '#e2e8f0';
+        c.style.background = '';
+      });
+      const card = radio.nextElementSibling;
+      if (radio.value === 'approved') { card.style.borderColor = '#16a34a'; card.style.background = '#f0fdf4'; }
+      else if (radio.value === 'rejected') { card.style.borderColor = '#dc2626'; card.style.background = '#fff1f2'; }
+      else { card.style.borderColor = '#d97706'; card.style.background = '#fefce8'; }
+    });
+  });
+</script>
+{% endblock %}
