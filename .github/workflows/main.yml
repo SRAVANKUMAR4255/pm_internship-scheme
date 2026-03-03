@@ -25,8 +25,8 @@ jobs:
 
     - name: Run migrations
       run: |
-        python manage.py migrate
+        python pm_internship-scheme/manage.py migrate
 
     - name: Run tests
       run: |
-        python manage.py test
+        python pm_internship-scheme/manage.py test
